@@ -62,7 +62,7 @@ enum class TileState {
 
 data class Tile(val state: TileState, val letter: Char?)
 
-@Preview()
+@Preview
 @Composable
 fun TileView(@PreviewParameter(TileProvider::class) tile: Tile) {
     var state by remember { mutableStateOf(tile.state) }
