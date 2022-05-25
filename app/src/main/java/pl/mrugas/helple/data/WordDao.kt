@@ -5,9 +5,9 @@ import androidx.room.Query
 
 @Dao
 interface WordDao {
-    @Query("SELECT * FROM word limit 5")
-    fun getSomeWords(): List<Word>
+    @Query("SELECT * FROM word  ORDER BY letter3 ASC limit 6")
+    suspend fun getSomeWords(): List<DbWord>
 
     @Query("SELECT count(*) from word")
-    fun count() : Int
+    suspend fun count() : Int
 }

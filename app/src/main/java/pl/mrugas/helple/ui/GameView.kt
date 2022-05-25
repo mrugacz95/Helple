@@ -12,9 +12,11 @@ import androidx.compose.material.ButtonDefaults.textButtonColors
 import androidx.compose.material.OutlinedButton
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,30 +26,65 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Observer
+import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import pl.mrugas.helple.GameViewModel
+import pl.mrugas.helple.MainActivity
 import pl.mrugas.helple.R
-
 
 @Preview
 @Composable
-fun GameView() {
+fun MainActivityView(gameViewModel: GameViewModel = viewModel()){
+            GameView(gameState = gameViewModel.gameState)
+}
+
+data class GameState(val words: List<WordState>) {
+    companion object {
+        fun randomState(): GameState {
+            return GameState(
+                List(6) {
+                    WordState(
+                        List(5) {
+                            Tile(TileState.values().random(), ('A'..'Z').random())
+                        }
+                    )
+                }
+            )
+        }
+    }
+}
+
+@Preview
+@Composable
+fun GameView(gameState: State<GameState> ) {
     return Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        for (i in 1..6) {
+        for (word in gameState.value.words) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
             ) {
-                for (j in 1..5) {
-                    TileView(Tile(TileState.values().random(), ('A'..'Z').random()))
-                }
+                WordView(word = word)
             }
         }
     }
 }
 
+
+data class WordState(val tiles: List<Tile>)
+
+@Preview
+@Composable
+fun WordView(word: WordState) {
+    for (tile in word.tiles) {
+        TileView(tile = tile)
+    }
+}
 
 enum class TileState {
     UNKNOWN, CORRECT_PLACE, INCORRECT_PLACE, WRONG;
