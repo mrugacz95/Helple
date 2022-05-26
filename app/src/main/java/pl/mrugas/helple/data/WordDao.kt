@@ -2,12 +2,14 @@ package pl.mrugas.helple.data
 
 import androidx.room.Dao
 import androidx.room.Query
+import androidx.room.RawQuery
+import androidx.sqlite.db.SimpleSQLiteQuery
 
 @Dao
 interface WordDao {
-    @Query("SELECT * FROM word  ORDER BY letter3 ASC limit 6")
-    suspend fun getSomeWords(): List<DbWord>
-
-    @Query("SELECT count(*) from word")
+    @Query("SELECT count(*) from words")
     suspend fun count() : Int
+
+    @RawQuery
+    suspend fun rawQuery(query: SimpleSQLiteQuery): List<DbWord>
 }

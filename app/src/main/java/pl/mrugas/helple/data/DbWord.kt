@@ -7,24 +7,28 @@ import pl.mrugas.helple.ui.Tile
 import pl.mrugas.helple.ui.TileState
 import pl.mrugas.helple.ui.WordState
 
-@Entity(tableName = "Word")
+@Entity(tableName = "words")
 data class DbWord(
-    @PrimaryKey val id: Long,
+    @PrimaryKey val id: Int,
     @ColumnInfo(name = "letter0") val letter0: String,
     @ColumnInfo(name = "letter1") val letter1: String,
     @ColumnInfo(name = "letter2") val letter2: String,
     @ColumnInfo(name = "letter3") val letter3: String,
     @ColumnInfo(name = "letter4") val letter4: String,
+    @ColumnInfo(name = "letter5") val letter5: String,
+    @ColumnInfo(name = "length") val length: Int,
 ) {
-    fun toWordState(): WordState {
+    fun toWordState(attempt: Int): WordState {
+        val word = toString()
         return WordState(
-            listOf(
-                Tile(TileState.UNKNOWN, letter0.first().uppercaseChar()),
-                Tile(TileState.UNKNOWN, letter1.first().uppercaseChar()),
-                Tile(TileState.UNKNOWN, letter2.first().uppercaseChar()),
-                Tile(TileState.UNKNOWN, letter3.first().uppercaseChar()),
-                Tile(TileState.UNKNOWN, letter4.first().uppercaseChar()),
-            )
+            attempt = attempt,
+            tiles = List(word.length) {
+                Tile(it, TileState.CORRECT_PLACE, word[it])
+            }
         )
+    }
+
+    override fun toString(): String {
+        return "$letter0$letter1$letter2$letter3$letter4$letter5"
     }
 }
