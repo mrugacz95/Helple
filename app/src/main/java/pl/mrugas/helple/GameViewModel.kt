@@ -1,10 +1,13 @@
 package pl.mrugas.helple
 
 import android.util.Log
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.sqlite.db.SimpleSQLiteQuery
+import com.google.common.collect.ImmutableSet
+import com.google.common.collect.Sets.combinations
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.launch
@@ -71,8 +74,9 @@ class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewMode
 
     }
 
-    private fun gerneratePossibleHints(){
-
+    @Suppress("UnstableApiUsage")
+    private fun gerneratePossibleHints(gameState: GameState): Set<Set<TileState>>? {
+        return combinations(setOf(TileState.WRONG, TileState.CORRECT_PLACE, TileState.INCORRECT_PLACE), gameState.wordLen)
     }
 
     fun updateState(word: WordState, tile: Tile) {
