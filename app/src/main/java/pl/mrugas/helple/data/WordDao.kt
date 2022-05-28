@@ -7,9 +7,12 @@ import androidx.sqlite.db.SimpleSQLiteQuery
 
 @Dao
 interface WordDao {
-    @Query("SELECT count(*) from words")
-    suspend fun count() : Int
+    @Query("SELECT count(*) from words where length = :length")
+    suspend fun count(length: Int): Int
 
     @RawQuery
     suspend fun rawQuery(query: SimpleSQLiteQuery): List<DbWord>
+
+    @RawQuery
+    suspend fun rawCountQuery(query: SimpleSQLiteQuery): Int
 }

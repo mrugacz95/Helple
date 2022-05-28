@@ -3,22 +3,27 @@ package pl.mrugas.helple.ui
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.paddingFrom
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults.elevation
 import androidx.compose.material.ButtonDefaults.textButtonColors
+import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.OutlinedButton
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.State
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -32,31 +37,23 @@ import pl.mrugas.helple.GameViewModel
 import pl.mrugas.helple.GameViewModel.Companion.WORD_LEN
 import pl.mrugas.helple.R
 
-@Preview
 @Composable
 fun MainActivityView(gameViewModel: GameViewModel = viewModel()) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        GameView(gameState = gameViewModel.gameState) { word, tile -> gameViewModel.updateState(word, tile) }
-        Row {
-            Button(onClick = { gameViewModel.updateHints() }) {
-                Text(text = "OK")
-            }
-            Spacer(modifier = Modifier.width(10.dp))
-            Button(onClick = { gameViewModel.restart() }) {
-                Text(text = "Restart")
-            }
-        }
-    }
-
+    GameView(gameState = gameViewModel.gameState.value,
+        onGameStateChanged = { word, tile -> gameViewModel.updateState(word, tile) },
+        guessNewWordAction = { gameViewModel.guessNewWord() },
+        restartAction = { gameViewModel.restart() },
+        changeWordLengthAction = { gameViewModel.changeWordLength(it) })
 }
 
-data class GameState(val words: List<WordState>, val wordLen : Int = 5, val attempt: Int = 0) {
+data class GameState(
+    val words: List<WordState>,
+    val wordLen: Int = 5,
+    val attempt: Int = 0,
+    val possibleWords: Int = 33549,
+    val failed: Boolean = false,
+    val loading: LoadingState? = null,
+) {
     companion object {
         fun randomState(): GameState {
             val word = (0..WORD_LEN).map { ('A'..'Z').random() }.joinToString(separator = "")
@@ -72,31 +69,137 @@ data class GameState(val words: List<WordState>, val wordLen : Int = 5, val atte
             )
         }
 
-        fun initial(initialWord: String) = GameState(
-            listOf(
+        fun initial(initialWord: String, possibleWords: Int, loading: LoadingState? = null) = GameState(
+            words = listOf(
                 WordState(
-                    0,
-                    List(WORD_LEN) { tileId ->
+                    attempt = 0,
+                    tiles = List(initialWord.length) { tileId ->
                         Tile(tileId, TileState.CORRECT_PLACE, initialWord[tileId])
                     }
                 )
-            )
+            ),
+            wordLen = initialWord.length,
+            possibleWords = possibleWords,
+            loading = loading,
+        )
+
+        fun empty() = GameState(emptyList(), loading = LoadingState.Circular)
+
+
+    }
+}
+
+sealed class LoadingState {
+    object Circular: LoadingState()
+    data class Progress(val value: Float) : LoadingState()
+}
+
+@Preview
+@Composable
+fun GameView(
+    @PreviewParameter(GameProvider::class) gameState: GameState,
+    onGameStateChanged: (WordState, Tile) -> Unit = { _, _ -> },
+    guessNewWordAction: () -> Unit = {},
+    restartAction: () -> Unit = {},
+    changeWordLengthAction: (Int) -> Unit = {},
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
+                for (wordLen in 5..6) {
+                    Button(
+                        contentPadding = PaddingValues(0.dp),
+                        modifier = Modifier
+                            .padding(0.dp)
+                            .size(38.dp),
+                        onClick = { changeWordLengthAction(wordLen) },
+                        enabled = gameState.loading == null,
+                        shape = CircleShape
+                    ) {
+                        Text(text = wordLen.toString(), modifier = Modifier.padding(8.dp))
+                    }
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        for ((idx, word) in gameState.words.withIndex()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                WordView(
+                    wordState = word,
+                    locked = gameState.attempt != idx && gameState.loading == null,
+                    onWordChanged = onGameStateChanged
+                )
+            }
+        }
+        if (gameState.loading != null) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                when (gameState.loading) {
+                    is LoadingState.Circular -> {
+                        CircularProgressIndicator()
+                    }
+                    is LoadingState.Progress -> {
+                        LinearProgressIndicator(progress = gameState.loading.value, modifier = Modifier.fillMaxWidth())
+                    }
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        ControlsView(
+            gameState = gameState,
+            guessNewWordAction = guessNewWordAction,
+            restartAction = restartAction
         )
     }
 }
 
 @Preview
 @Composable
-fun GameView(gameState: State<GameState>, onGameStateChanged: (WordState, Tile) -> Unit) {
-    for ((idx, word) in gameState.value.words.withIndex()) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center
+fun ControlsView(
+    @PreviewParameter(GameProvider::class) gameState: GameState,
+    guessNewWordAction: () -> Unit = {},
+    restartAction: () -> Unit = {}
+) {
+    Row(
+        Modifier.height(IntrinsicSize.Min)
+    ) {
+        Column(
+            Modifier.fillMaxHeight(),
+            verticalArrangement = Arrangement.Center
         ) {
-            WordView(
-                word = word,
-                locked = gameState.value.attempt != idx,
-                onWordChanged = { word, tile -> onGameStateChanged(word, tile) })
+            Text(
+                text = "Possible words: ${gameState.possibleWords}"
+            )
+        }
+        Spacer(modifier = Modifier.width(10.dp))
+        Button(
+            onClick = { guessNewWordAction() },
+            enabled = gameState.loading == null
+        ) {
+            Text(text = "OK")
+        }
+        Spacer(modifier = Modifier.width(10.dp))
+        Button(
+            onClick = { restartAction() },
+            enabled = gameState.loading == null
+        ) {
+            val text = if (gameState.failed) "No words found, restart" else "Restart"
+            Text(text = text)
         }
     }
 }
@@ -109,9 +212,19 @@ data class WordState(val attempt: Int, val tiles: List<Tile>) {
 
 @Preview
 @Composable
-fun WordView(word: WordState, locked: Boolean, onWordChanged: (WordState, Tile) -> Unit) {
-    for (tile in word.tiles) {
-        TileView(tile = tile, locked = locked, onTileChanged = { onWordChanged(word, it) })
+fun WordView(
+    @PreviewParameter(WordProvider::class) wordState: WordState,
+    locked: Boolean = false,
+    onWordChanged: (WordState, Tile) -> Unit = { _, _ -> }
+) {
+    Row {
+        for (tile in wordState.tiles) {
+            TileView(
+                tile = tile,
+                wordLen = wordState.word.length,
+                locked = locked,
+                onTileChanged = { onWordChanged(wordState, it) })
+        }
     }
 }
 
@@ -130,17 +243,23 @@ data class Tile(val id: Int, val state: TileState, val letter: Char)
 
 @Preview
 @Composable
-fun TileView(@PreviewParameter(TileProvider::class) tile: Tile, locked: Boolean = false, onTileChanged: (Tile) -> Unit = {}) {
+fun TileView(
+    @PreviewParameter(TileProvider::class) tile: Tile,
+    wordLen: Int = 6,
+    locked: Boolean = false,
+    onTileChanged: (Tile) -> Unit = {}
+) {
     val color = when (tile.state) {
         TileState.CORRECT_PLACE -> colorResource(id = R.color.tile_correct)
         TileState.INCORRECT_PLACE -> colorResource(id = R.color.tile_incorrect_place)
         TileState.WRONG -> colorResource(id = R.color.tile_wrong_letter)
     }
     val textColor = if (tile.state == TileState.WRONG) Color.White else Color.Black
+    val size = 42.dp
     return OutlinedButton(
         modifier = Modifier
-            .padding(16.dp)
-            .size(width = 48.dp, height = 48.dp),
+            .padding(8.dp)
+            .size(width = size, height = size),
         border = BorderStroke(1.dp, color),
         colors = textButtonColors(backgroundColor = color, contentColor = Color.Black),
         elevation = elevation(
@@ -158,6 +277,17 @@ fun TileView(@PreviewParameter(TileProvider::class) tile: Tile, locked: Boolean 
     }
 }
 
+class GameProvider : PreviewParameterProvider<GameState> {
+    override val values = listOf(GameState.initial("siorka", possibleWords = 35263, loading = LoadingState.Progress(0.33f))).asSequence()
+}
+
+class WordProvider : PreviewParameterProvider<WordState> {
+    override val values: Sequence<WordState> = listOf(
+        WordState(
+            1,
+            tiles = "kotek".mapIndexed { idx, letter -> Tile(id = idx, letter = letter, state = TileState.INCORRECT_PLACE) })
+    ).asSequence()
+}
 
 class TileProvider : PreviewParameterProvider<Tile> {
     override val values = listOf(Tile(0, TileState.INCORRECT_PLACE, 'A')).asSequence()
