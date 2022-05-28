@@ -141,7 +141,7 @@ fun GameView(
             ) {
                 WordView(
                     wordState = word,
-                    locked = gameState.attempt != idx && gameState.loading == null,
+                    locked = gameState.attempt != idx || gameState.loading != null,
                     onWordChanged = onGameStateChanged
                 )
             }
@@ -168,127 +168,10 @@ fun GameView(
     }
 }
 
-@Preview
-@Composable
-fun ControlsView(
-    @PreviewParameter(GameProvider::class) gameState: GameState,
-    guessNewWordAction: () -> Unit = {},
-    restartAction: () -> Unit = {}
-) {
-    Row(
-        Modifier.height(IntrinsicSize.Min)
-    ) {
-        Column(
-            Modifier.fillMaxHeight(),
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "Possible words: ${gameState.possibleWords}"
-            )
-        }
-        Spacer(modifier = Modifier.width(10.dp))
-        Button(
-            onClick = { guessNewWordAction() },
-            enabled = gameState.loading == null
-        ) {
-            Text(text = "OK")
-        }
-        Spacer(modifier = Modifier.width(10.dp))
-        Button(
-            onClick = { restartAction() },
-            enabled = gameState.loading == null
-        ) {
-            val text = if (gameState.failed) "No words found, restart" else "Restart"
-            Text(text = text)
-        }
-    }
-}
-
-
-data class WordState(val attempt: Int, val tiles: List<Tile>) {
-    val word: String
-        get() = tiles.map { it.letter }.joinToString(separator = "")
-}
-
-@Preview
-@Composable
-fun WordView(
-    @PreviewParameter(WordProvider::class) wordState: WordState,
-    locked: Boolean = false,
-    onWordChanged: (WordState, Tile) -> Unit = { _, _ -> }
-) {
-    Row {
-        for (tile in wordState.tiles) {
-            TileView(
-                tile = tile,
-                wordLen = wordState.word.length,
-                locked = locked,
-                onTileChanged = { onWordChanged(wordState, it) })
-        }
-    }
-}
-
-enum class TileState {
-    CORRECT_PLACE, INCORRECT_PLACE, WRONG;
-
-    fun next(): TileState {
-        return values().toMutableList().apply { add(values().first()) }.let {
-            val idx = it.indexOf(this)
-            it[idx + 1]
-        }
-    }
-}
-
-data class Tile(val id: Int, val state: TileState, val letter: Char)
-
-@Preview
-@Composable
-fun TileView(
-    @PreviewParameter(TileProvider::class) tile: Tile,
-    wordLen: Int = 6,
-    locked: Boolean = false,
-    onTileChanged: (Tile) -> Unit = {}
-) {
-    val color = when (tile.state) {
-        TileState.CORRECT_PLACE -> colorResource(id = R.color.tile_correct)
-        TileState.INCORRECT_PLACE -> colorResource(id = R.color.tile_incorrect_place)
-        TileState.WRONG -> colorResource(id = R.color.tile_wrong_letter)
-    }
-    val textColor = if (tile.state == TileState.WRONG) Color.White else Color.Black
-    val size = 42.dp
-    return OutlinedButton(
-        modifier = Modifier
-            .padding(8.dp)
-            .size(width = size, height = size),
-        border = BorderStroke(1.dp, color),
-        colors = textButtonColors(backgroundColor = color, contentColor = Color.Black),
-        elevation = elevation(
-            defaultElevation = 10.dp,
-            pressedElevation = 15.dp,
-            disabledElevation = 0.dp
-        ),
-        onClick = { onTileChanged(tile) },
-        enabled = !locked
-    ) {
-        Text(
-            text = tile.letter.uppercase(),
-            color = textColor
-        )
-    }
-}
-
 class GameProvider : PreviewParameterProvider<GameState> {
-    override val values = listOf(GameState.initial("siorka", possibleWords = 35263, loading = LoadingState.Progress(0.33f))).asSequence()
-}
-
-class WordProvider : PreviewParameterProvider<WordState> {
-    override val values: Sequence<WordState> = listOf(
-        WordState(
-            1,
-            tiles = "kotek".mapIndexed { idx, letter -> Tile(id = idx, letter = letter, state = TileState.INCORRECT_PLACE) })
+    override val values = listOf(
+        GameState.initial("siorka", possibleWords = 35263, loading = LoadingState.Progress(0.33f)),
+        GameState.initial("korei", possibleWords = 32263, loading = null),
     ).asSequence()
 }
 
-class TileProvider : PreviewParameterProvider<Tile> {
-    override val values = listOf(Tile(0, TileState.INCORRECT_PLACE, 'A')).asSequence()
-}

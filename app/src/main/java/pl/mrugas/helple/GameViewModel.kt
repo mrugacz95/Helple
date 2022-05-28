@@ -7,17 +7,19 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import pl.mrugas.helple.data.DbWord
 import pl.mrugas.helple.data.WordDao
-import pl.mrugas.helple.domain.QueryBuilder
+import pl.mrugas.helple.util.QueryBuilder
 import pl.mrugas.helple.ui.GameState
 import pl.mrugas.helple.ui.LoadingState
 import pl.mrugas.helple.ui.Tile
 import pl.mrugas.helple.ui.TileState
 import pl.mrugas.helple.ui.WordState
 import kotlin.math.max
-import kotlin.math.roundToInt
+import kotlin.math.roundToLong
 
 @HiltViewModel
 class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewModel() {
@@ -30,13 +32,17 @@ class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewMode
     }
 
     fun guessNewWord() {
-        val currentState = gameState.value
-        gameState.value = currentState.copy(loading = LoadingState.Circular)
-
         viewModelScope.launch(Dispatchers.Default) {
+            val wordsLeft = wordDao.rawCountQuery(gameState.value.toQuery().count().build())
+
+            val currentState = gameState.value.copy(
+                loading = LoadingState.Progress(0f),
+                possibleWords = wordsLeft
+            )
+            gameState.value = currentState
+
             val newWord = calculateNewWord(currentState) { progress ->
                 gameState.value = currentState.copy(
-                    failed = true,
                     loading = LoadingState.Progress(progress)
                 )
             }
@@ -51,7 +57,7 @@ class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewMode
                 words = currentState.words.toMutableList() + listOf(newWord.toWordState(attemptCount)),
                 attempt = attemptCount,
                 wordLen = currentState.wordLen,
-                possibleWords = wordDao.rawCountQuery(currentState.toQuery().build()),
+                possibleWords = wordsLeft,
                 failed = false,
                 loading = null
             )
@@ -61,27 +67,14 @@ class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewMode
     private suspend fun calculateNewWord(currentState: GameState, updateProgress: (Float) -> Unit): DbWord? {
         val query = currentState.toQuery()
         val possibleWords = wordDao.rawQuery(query.build())
-        val possibleHints = generatePossibleHints(currentState.wordLen)
-        var bestWord: DbWord? = null
-        var minPossibleWordsLength = Int.MAX_VALUE
-        var progress = 0f
-        for ((idx, word) in possibleWords.withIndex()) {
-
-            val worstResult = countWorstResult(query, word.toString(), possibleHints)
-
-            if (worstResult < minPossibleWordsLength) {
-                bestWord = word
-                minPossibleWordsLength = worstResult
-            }
-
-            (idx / possibleWords.size * 100f).roundToInt().toFloat().let { newProgress ->
-                if (newProgress > progress) {
-                    progress = newProgress
-                    updateProgress(progress)
-                }
+        // TODO use this time somehow
+        runBlocking {
+            for (i in 1..100) {
+                updateProgress(i.toFloat() / 100f)
+                delay((possibleWords.size.toFloat() / 30).roundToLong()) // take whole operation 3 sec
             }
         }
-        return bestWord
+        return if (possibleWords.isEmpty()) null else possibleWords.random()
     }
 
     private suspend fun GameState.toQuery(): QueryBuilder {
