@@ -7,19 +7,16 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import pl.mrugas.helple.data.DbWord
+import pl.mrugas.helple.data.QueryBuilder
 import pl.mrugas.helple.data.WordDao
-import pl.mrugas.helple.util.QueryBuilder
 import pl.mrugas.helple.ui.GameState
 import pl.mrugas.helple.ui.LoadingState
 import pl.mrugas.helple.ui.Tile
 import pl.mrugas.helple.ui.TileState
 import pl.mrugas.helple.ui.WordState
 import kotlin.math.max
-import kotlin.math.roundToLong
 
 @HiltViewModel
 class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewModel() {
@@ -64,23 +61,27 @@ class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewMode
         }
     }
 
-    private suspend fun calculateNewWord(currentState: GameState, updateProgress: (Float) -> Unit): DbWord? {
-        val query = currentState.toQuery()
+    private suspend fun calculateNewWord(gameState: GameState, updateProgress: (Float) -> Unit): DbWord? {
+        val query = gameState.toQuery()
         val possibleWords = wordDao.rawQuery(query.build())
-        // TODO use this time somehow
-        runBlocking {
-            for (i in 1..100) {
-                updateProgress(i.toFloat() / 100f)
-                delay((possibleWords.size.toFloat() / 30).roundToLong()) // take whole operation 3 sec
-            }
-        }
-        return if (possibleWords.isEmpty()) null else possibleWords.random()
+        val possibleHints = generatePossibleHints(gameState.wordLen)
+        return possibleWords
+            .withIndex()
+            .minByOrNull { (idx, word) ->
+                val worstResult = countWorstResult(gameState, word.toString(), possibleHints)
+                updateProgress(idx.toFloat() / possibleWords.size)
+                worstResult
+            }?.value
     }
 
-    private suspend fun GameState.toQuery(): QueryBuilder {
+
+    private suspend fun GameState.toQuery(appendKnownLetters: Boolean = true): QueryBuilder {
         val query = QueryBuilder()
         for (word in words) {
             for (tile in word.tiles) {
+                if (appendKnownLetters && tile.state == TileState.CORRECT_PLACE) {
+                    continue
+                }
                 appendTileRuleToQuery(tile.state, tile.letter, tile.id, wordLen, query)
             }
         }
@@ -246,15 +247,16 @@ class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewMode
         )
     }
 
-    private suspend fun countWorstResult(queryBuilder: QueryBuilder, word: String, possibleHints: List<List<TileState>>): Int {
+    private suspend fun countWorstResult(gameState: GameState, word: String, possibleHints: List<List<TileState>>): Int {
         var worst = 0
+        val query = gameState.toQuery(appendKnownLetters = false).count()
         for (hint in possibleHints) {
-            val query = queryBuilder.copy().count()
+            val queryCopy = query.copy()
             for ((idx, letterWithState) in word.toList().zip(hint).withIndex()) {
                 val (letter, state) = letterWithState
-                appendTileRuleToQuery(state, letter, idx, word.length, query)
+                appendTileRuleToQuery(state, letter, idx, word.length, queryCopy)
             }
-            val result = wordDao.rawCountQuery(query.build())
+            val result = wordDao.rawCountQuery(queryCopy.build())
             worst = max(worst, result)
         }
         return worst

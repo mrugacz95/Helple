@@ -1,4 +1,4 @@
-package pl.mrugas.helple.util
+package pl.mrugas.helple.data
 
 import androidx.sqlite.db.SimpleSQLiteQuery
 

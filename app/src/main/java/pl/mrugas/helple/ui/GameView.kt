@@ -84,8 +84,6 @@ data class GameState(
         )
 
         fun empty() = GameState(emptyList(), loading = LoadingState.Circular)
-
-
     }
 }
 
