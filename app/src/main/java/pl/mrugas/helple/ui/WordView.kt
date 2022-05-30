@@ -14,8 +14,9 @@ data class WordState(val attempt: Int, val tiles: List<Tile>) {
 @Preview
 @Composable
 fun WordView(
-    @PreviewParameter(WordProvider::class) wordState: WordState,
+    @PreviewParameter(WordProvider::class, ) wordState: WordState,
     locked: Boolean = false,
+    won : Boolean = false,
     onWordChanged: (WordState, Tile) -> Unit = { _, _ -> }
 ) {
     Row {
@@ -24,6 +25,7 @@ fun WordView(
                 tile = tile,
                 wordLen = wordState.word.length,
                 locked = locked,
+                won = won,
                 onTileChanged = { onWordChanged(wordState, it) })
         }
     }

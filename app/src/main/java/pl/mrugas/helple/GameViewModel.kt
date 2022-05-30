@@ -32,6 +32,11 @@ class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewMode
         viewModelScope.launch(Dispatchers.Default) {
             val wordsLeft = wordDao.rawCountQuery(gameState.value.toQuery().count().build())
 
+            if (gameState.value.words.last().tiles.all { it.state == TileState.CORRECT_PLACE }){
+                gameState.value = gameState.value.copy(won = true, possibleWords = 1)
+                return@launch
+            }
+
             val currentState = gameState.value.copy(
                 loading = LoadingState.Progress(0f),
                 possibleWords = wordsLeft

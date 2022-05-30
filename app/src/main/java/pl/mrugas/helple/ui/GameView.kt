@@ -53,6 +53,7 @@ data class GameState(
     val possibleWords: Int = 33549,
     val failed: Boolean = false,
     val loading: LoadingState? = null,
+    val won: Boolean = false,
 ) {
     companion object {
         fun randomState(): GameState {
@@ -140,7 +141,8 @@ fun GameView(
                 WordView(
                     wordState = word,
                     locked = gameState.attempt != idx || gameState.loading != null,
-                    onWordChanged = onGameStateChanged
+                    onWordChanged = onGameStateChanged,
+                    won = gameState.won,
                 )
             }
         }
