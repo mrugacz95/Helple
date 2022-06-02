@@ -14,27 +14,18 @@ data class WordState(val attempt: Int, val tiles: List<Tile>) {
 @Preview
 @Composable
 fun WordView(
-    @PreviewParameter(WordProvider::class, ) wordState: WordState,
-    locked: Boolean = false,
-    won : Boolean = false,
+    @PreviewParameter(GameProvider::class, ) gameState: GameState,
+    wordId: Int = 0,
     onWordChanged: (WordState, Tile) -> Unit = { _, _ -> }
 ) {
+    val wordState = gameState.words[wordId]
     Row {
-        for (tile in wordState.tiles) {
+        for (tile in wordState.tiles.withIndex()) {
             TileView(
-                tile = tile,
-                wordLen = wordState.word.length,
-                locked = locked,
-                won = won,
+                gameState = gameState,
+                tileId = tile.index,
+                wordId = wordId,
                 onTileChanged = { onWordChanged(wordState, it) })
         }
     }
-}
-
-class WordProvider : PreviewParameterProvider<WordState> {
-    override val values: Sequence<WordState> = listOf(
-        WordState(
-            1,
-            tiles = "kotek".mapIndexed { idx, letter -> Tile(id = idx, letter = letter, state = TileState.INCORRECT_PLACE) })
-    ).asSequence()
 }

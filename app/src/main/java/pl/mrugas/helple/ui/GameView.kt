@@ -133,16 +133,15 @@ fun GameView(
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
-        for ((idx, word) in gameState.words.withIndex()) {
+        for ((idx, _) in gameState.words.withIndex()) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
             ) {
                 WordView(
-                    wordState = word,
-                    locked = gameState.attempt != idx || gameState.loading != null,
+                    wordId = idx,
+                    gameState = gameState,
                     onWordChanged = onGameStateChanged,
-                    won = gameState.won,
                 )
             }
         }

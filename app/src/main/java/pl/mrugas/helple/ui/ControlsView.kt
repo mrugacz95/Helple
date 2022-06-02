@@ -38,7 +38,7 @@ fun ControlsView(
         Spacer(modifier = Modifier.width(16.dp))
         Button(
             onClick = { guessNewWordAction() },
-            enabled = gameState.loading == null
+            enabled = gameState.loading == null && !gameState.won
         ) {
             Text(text = "OK")
         }
