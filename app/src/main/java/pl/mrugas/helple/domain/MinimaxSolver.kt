@@ -6,9 +6,11 @@ import pl.mrugas.helple.data.WordDao
 import pl.mrugas.helple.ui.GameState
 import pl.mrugas.helple.ui.TileState
 import pl.mrugas.helple.ui.WordState
+import pl.mrugas.helple.util.CombsWithReps
 import kotlin.math.max
 
 class MinimaxSolver : Solver {
+
     override suspend fun guessNewWord(
         gameState: GameState,
         wordDao: WordDao,
@@ -16,7 +18,10 @@ class MinimaxSolver : Solver {
     ): DbWord? {
         val query = QueryBuilder.fromGameState(gameState)
         val possibleWords = wordDao.rawQuery(query.build())
-        val possibleHints = generatePossibleHints(gameState.wordLen)
+        val possibleHints = CombsWithReps(gameState.wordLen, TileState.values().size, TileState.values().toList())
+            .generate()
+            .filter { states -> states.any { state -> state != TileState.CORRECT_PLACE } }
+            .toList()
         return possibleWords
             .withIndex()
             .minByOrNull { (idx, word) ->
@@ -45,153 +50,4 @@ class MinimaxSolver : Solver {
         }
         return worst
     }
-
-    @Suppress("UnstableApiUsage")
-    private fun generatePossibleHints(wordLen: Int): List<List<TileState>> {
-        // TODO change to generating from hardcoded list
-        return listOf(
-            listOf(
-                TileState.CORRECT_PLACE,
-                TileState.CORRECT_PLACE,
-                TileState.CORRECT_PLACE,
-                TileState.CORRECT_PLACE,
-                TileState.INCORRECT_PLACE
-            ),
-            listOf(
-                TileState.CORRECT_PLACE,
-                TileState.CORRECT_PLACE,
-                TileState.CORRECT_PLACE,
-                TileState.CORRECT_PLACE,
-                TileState.WRONG
-            ),
-            listOf(
-                TileState.CORRECT_PLACE,
-                TileState.CORRECT_PLACE,
-                TileState.CORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE
-            ),
-            listOf(
-                TileState.CORRECT_PLACE,
-                TileState.CORRECT_PLACE,
-                TileState.CORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.WRONG
-            ),
-            listOf(
-                TileState.CORRECT_PLACE,
-                TileState.CORRECT_PLACE,
-                TileState.CORRECT_PLACE,
-                TileState.WRONG,
-                TileState.WRONG
-            ),
-            listOf(
-                TileState.CORRECT_PLACE,
-                TileState.CORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE
-            ),
-            listOf(
-                TileState.CORRECT_PLACE,
-                TileState.CORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.WRONG
-            ),
-            listOf(
-                TileState.CORRECT_PLACE,
-                TileState.CORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.WRONG,
-                TileState.WRONG
-            ),
-            listOf(
-                TileState.CORRECT_PLACE,
-                TileState.CORRECT_PLACE,
-                TileState.WRONG,
-                TileState.WRONG,
-                TileState.WRONG
-            ),
-            listOf(
-                TileState.CORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE
-            ),
-            listOf(
-                TileState.CORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.WRONG
-            ),
-            listOf(
-                TileState.CORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.WRONG,
-                TileState.WRONG
-            ),
-            listOf(
-                TileState.CORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.WRONG,
-                TileState.WRONG,
-                TileState.WRONG
-            ),
-            listOf(
-                TileState.CORRECT_PLACE,
-                TileState.WRONG,
-                TileState.WRONG,
-                TileState.WRONG,
-                TileState.WRONG
-            ),
-            listOf(
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE
-            ),
-            listOf(
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.WRONG
-            ),
-            listOf(
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.WRONG,
-                TileState.WRONG
-            ),
-            listOf(
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.WRONG,
-                TileState.WRONG,
-                TileState.WRONG
-            ),
-            listOf(
-                TileState.INCORRECT_PLACE,
-                TileState.WRONG,
-                TileState.WRONG,
-                TileState.WRONG,
-                TileState.WRONG
-            ),
-            listOf(
-                TileState.WRONG,
-                TileState.WRONG,
-                TileState.WRONG,
-                TileState.WRONG,
-                TileState.WRONG
-            )
-        )
-    }
-
-
 }
