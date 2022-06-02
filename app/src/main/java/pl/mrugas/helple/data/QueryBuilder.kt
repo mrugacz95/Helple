@@ -1,6 +1,9 @@
 package pl.mrugas.helple.data
 
 import androidx.sqlite.db.SimpleSQLiteQuery
+import pl.mrugas.helple.ui.GameState
+import pl.mrugas.helple.ui.TileState
+import pl.mrugas.helple.ui.WordState
 
 data class QueryBuilder(
     private val columns: String = "*",
@@ -16,6 +19,12 @@ data class QueryBuilder(
 
     fun addWrongLetter(letter: Char, position: Int) = apply {
         appendWhere("letter${position} is not \"${letter}\"")
+    }
+
+    fun excludeLetter(letter: Char, wordLen: Int) = apply {
+        for (position in 0 until wordLen) {
+            appendWhere("letter${position} is not \"${letter}\"")
+        }
     }
 
     fun addIncorrectPlaceLetter(letter: Char, position: Int, wordLen: Int) = apply {
@@ -77,5 +86,44 @@ data class QueryBuilder(
             whereClause = StringBuilder(whereClause),
             count = count
         )
+    }
+
+    fun appendTileRuleToQuery(
+        state: TileState,
+        wordState: WordState,
+        letter: Char,
+        position: Int,
+        wordLen: Int,
+        query: QueryBuilder
+    ) {
+        when (state) {
+            TileState.CORRECT_PLACE -> query.addKnownLetter(letter, position)
+            TileState.INCORRECT_PLACE -> query.addIncorrectPlaceLetter(letter, position, wordLen)
+            TileState.WRONG -> {
+                if (wordState.tiles.any { tile ->
+                        tile.id != position &&
+                            tile.state != TileState.WRONG &&
+                            tile.letter == letter
+                    }
+                ) {
+                    query.addWrongLetter(letter, position)
+                } else {
+                    query.excludeLetter(letter, wordLen)
+                }
+            }
+        }
+    }
+
+    companion object {
+        fun fromGameState(gameState: GameState): QueryBuilder {
+            val query = QueryBuilder()
+            for (word in gameState.words) {
+                for (tile in word.tiles) {
+                    query.appendTileRuleToQuery(tile.state, word, tile.letter, tile.id, gameState.wordLen, query)
+                }
+            }
+            query.setWordsLen(gameState.wordLen)
+            return query
+        }
     }
 }

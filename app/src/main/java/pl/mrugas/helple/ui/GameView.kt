@@ -50,10 +50,11 @@ data class GameState(
     val words: List<WordState>,
     val wordLen: Int = 5,
     val attempt: Int = 0,
-    val possibleWords: Int = 33549,
+    val possibleWords: Int? = null,
     val failed: Boolean = false,
     val loading: LoadingState? = null,
     val won: Boolean = false,
+    val solver: SolverType = SolverType.MinimaxSolver,
 ) {
     companion object {
         fun randomState(): GameState {
@@ -92,6 +93,8 @@ sealed class LoadingState {
     object Circular: LoadingState()
     data class Progress(val value: Float) : LoadingState()
 }
+
+enum class SolverType { SimpleSolver, MinimaxSolver }
 
 @Preview
 @Composable

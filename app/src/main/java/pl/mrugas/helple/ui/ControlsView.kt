@@ -45,7 +45,6 @@ fun ControlsView(
         Spacer(modifier = Modifier.width(16.dp))
         Button(
             onClick = { restartAction() },
-            enabled = gameState.loading == null
         ) {
             val text = if (gameState.failed) "No words found, restart" else "Restart"
             Text(text = text)

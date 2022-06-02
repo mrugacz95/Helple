@@ -4,17 +4,25 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
-import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 
 data class WordState(val attempt: Int, val tiles: List<Tile>) {
     val word: String
         get() = tiles.map { it.letter }.joinToString(separator = "")
+
+    companion object {
+        fun fromWordAndStates(word: String, hints: List<TileState>, attempt: Int = -1): WordState {
+            return WordState(attempt = attempt,
+                tiles = word.toList()
+                    .zip(hints)
+                    .mapIndexed { idx, tile -> Tile(idx, tile.second, tile.first) })
+        }
+    }
 }
 
 @Preview
 @Composable
 fun WordView(
-    @PreviewParameter(GameProvider::class, ) gameState: GameState,
+    @PreviewParameter(GameProvider::class) gameState: GameState,
     wordId: Int = 0,
     onWordChanged: (WordState, Tile) -> Unit = { _, _ -> }
 ) {

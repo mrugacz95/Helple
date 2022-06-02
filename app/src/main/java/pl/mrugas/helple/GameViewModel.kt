@@ -1,22 +1,25 @@
 package pl.mrugas.helple
 
-import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 import pl.mrugas.helple.data.DbWord
 import pl.mrugas.helple.data.QueryBuilder
 import pl.mrugas.helple.data.WordDao
+import pl.mrugas.helple.domain.MinimaxSolver
+import pl.mrugas.helple.domain.SimpleSolver
 import pl.mrugas.helple.ui.GameState
 import pl.mrugas.helple.ui.LoadingState
+import pl.mrugas.helple.ui.SolverType
 import pl.mrugas.helple.ui.Tile
 import pl.mrugas.helple.ui.TileState
 import pl.mrugas.helple.ui.WordState
-import kotlin.math.max
 
 @HiltViewModel
 class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewModel() {
@@ -25,14 +28,17 @@ class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewMode
         private set
 
     fun init() {
-        restart()
+        viewModelScope.launch(Dispatchers.IO) {
+            val count = wordDao.count(gameState.value.wordLen)
+            gameState.value = GameState.initial(INITIAL_WORDS[gameState.value.wordLen] ?: "korei", possibleWords = count)
+        }
     }
 
     fun guessNewWord() {
         viewModelScope.launch(Dispatchers.Default) {
-            val wordsLeft = wordDao.rawCountQuery(gameState.value.toQuery().count().build())
+            val wordsLeft = wordDao.rawCountQuery(QueryBuilder.fromGameState(gameState.value).count().build())
 
-            if (gameState.value.words.last().tiles.all { it.state == TileState.CORRECT_PLACE }){
+            if (gameState.value.words.last().tiles.all { it.state == TileState.CORRECT_PLACE }) {
                 gameState.value = gameState.value.copy(won = true, possibleWords = 1)
                 return@launch
             }
@@ -66,205 +72,12 @@ class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewMode
         }
     }
 
-    private suspend fun calculateNewWord(gameState: GameState, updateProgress: (Float) -> Unit): DbWord? {
-        val query = gameState.toQuery()
-        val possibleWords = wordDao.rawQuery(query.build())
-        val possibleHints = generatePossibleHints(gameState.wordLen)
-        return possibleWords
-            .withIndex()
-            .minByOrNull { (idx, word) ->
-                val worstResult = countWorstResult(gameState, word.toString(), possibleHints)
-                updateProgress(idx.toFloat() / possibleWords.size)
-                worstResult
-            }?.value
-    }
-
-
-    private suspend fun GameState.toQuery(appendKnownLetters: Boolean = true): QueryBuilder {
-        val query = QueryBuilder()
-        for (word in words) {
-            for (tile in word.tiles) {
-                if (appendKnownLetters && tile.state == TileState.CORRECT_PLACE) {
-                    continue
-                }
-                appendTileRuleToQuery(tile.state, tile.letter, tile.id, wordLen, query)
-            }
+    private suspend fun calculateNewWord(gameState: GameState, updateProgress: (progress: Float) -> Unit): DbWord? {
+        val solver = when (gameState.solver) {
+            SolverType.SimpleSolver -> SimpleSolver()
+            SolverType.MinimaxSolver -> MinimaxSolver()
         }
-        query.setWordsLen(wordLen)
-        val result = wordDao.rawQuery(query.build())
-        Log.d("query", "$query, count: ${result.size}")
-        return query
-
-    }
-
-    private fun appendTileRuleToQuery(state: TileState, letter: Char, position: Int, wordLen: Int, query: QueryBuilder) {
-        when (state) {
-            TileState.CORRECT_PLACE -> query.addKnownLetter(letter, position)
-            TileState.INCORRECT_PLACE -> query.addIncorrectPlaceLetter(letter, position, wordLen)
-            TileState.WRONG -> query.addWrongLetter(letter, position)
-        }
-    }
-
-    @Suppress("UnstableApiUsage")
-    private fun generatePossibleHints(wordLen: Int): List<List<TileState>> {
-        // TODO change to generating from hardcoded list
-        return listOf(
-            listOf(
-                TileState.CORRECT_PLACE,
-                TileState.CORRECT_PLACE,
-                TileState.CORRECT_PLACE,
-                TileState.CORRECT_PLACE,
-                TileState.INCORRECT_PLACE
-            ),
-            listOf(
-                TileState.CORRECT_PLACE,
-                TileState.CORRECT_PLACE,
-                TileState.CORRECT_PLACE,
-                TileState.CORRECT_PLACE,
-                TileState.WRONG
-            ),
-            listOf(
-                TileState.CORRECT_PLACE,
-                TileState.CORRECT_PLACE,
-                TileState.CORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE
-            ),
-            listOf(
-                TileState.CORRECT_PLACE,
-                TileState.CORRECT_PLACE,
-                TileState.CORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.WRONG
-            ),
-            listOf(
-                TileState.CORRECT_PLACE,
-                TileState.CORRECT_PLACE,
-                TileState.CORRECT_PLACE,
-                TileState.WRONG,
-                TileState.WRONG
-            ),
-            listOf(
-                TileState.CORRECT_PLACE,
-                TileState.CORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE
-            ),
-            listOf(
-                TileState.CORRECT_PLACE,
-                TileState.CORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.WRONG
-            ),
-            listOf(
-                TileState.CORRECT_PLACE,
-                TileState.CORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.WRONG,
-                TileState.WRONG
-            ),
-            listOf(
-                TileState.CORRECT_PLACE,
-                TileState.CORRECT_PLACE,
-                TileState.WRONG,
-                TileState.WRONG,
-                TileState.WRONG
-            ),
-            listOf(
-                TileState.CORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE
-            ),
-            listOf(
-                TileState.CORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.WRONG
-            ),
-            listOf(
-                TileState.CORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.WRONG,
-                TileState.WRONG
-            ),
-            listOf(
-                TileState.CORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.WRONG,
-                TileState.WRONG,
-                TileState.WRONG
-            ),
-            listOf(
-                TileState.CORRECT_PLACE,
-                TileState.WRONG,
-                TileState.WRONG,
-                TileState.WRONG,
-                TileState.WRONG
-            ),
-            listOf(
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE
-            ),
-            listOf(
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.WRONG
-            ),
-            listOf(
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.WRONG,
-                TileState.WRONG
-            ),
-            listOf(
-                TileState.INCORRECT_PLACE,
-                TileState.INCORRECT_PLACE,
-                TileState.WRONG,
-                TileState.WRONG,
-                TileState.WRONG
-            ),
-            listOf(
-                TileState.INCORRECT_PLACE,
-                TileState.WRONG,
-                TileState.WRONG,
-                TileState.WRONG,
-                TileState.WRONG
-            ),
-            listOf(
-                TileState.WRONG,
-                TileState.WRONG,
-                TileState.WRONG,
-                TileState.WRONG,
-                TileState.WRONG
-            )
-        )
-    }
-
-    private suspend fun countWorstResult(gameState: GameState, word: String, possibleHints: List<List<TileState>>): Int {
-        var worst = 0
-        val query = gameState.toQuery(appendKnownLetters = false).count()
-        for (hint in possibleHints) {
-            val queryCopy = query.copy()
-            for ((idx, letterWithState) in word.toList().zip(hint).withIndex()) {
-                val (letter, state) = letterWithState
-                appendTileRuleToQuery(state, letter, idx, word.length, queryCopy)
-            }
-            val result = wordDao.rawCountQuery(queryCopy.build())
-            worst = max(worst, result)
-        }
-        return worst
+        return solver.guessNewWord(gameState, wordDao, updateProgress)
     }
 
     fun updateState(word: WordState, tile: Tile) {
@@ -287,10 +100,8 @@ class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewMode
     }
 
     fun restart() {
-        viewModelScope.launch(Dispatchers.IO) {
-            val count = wordDao.count(gameState.value.wordLen)
-            gameState.value = GameState.initial(INITIAL_WORDS[gameState.value.wordLen] ?: "korei", possibleWords = count)
-        }
+        viewModelScope.coroutineContext.cancelChildren()
+        init()
     }
 
     fun changeWordLength(newLength: Int) {

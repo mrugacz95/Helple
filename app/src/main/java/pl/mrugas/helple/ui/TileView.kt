@@ -37,7 +37,7 @@ enum class TileState {
     }
 }
 
-data class Tile(val id: Int, val state: TileState, val letter: Char, val won: Boolean = false)
+data class Tile(val id: Int, val state: TileState, val letter: Char)
 
 @Preview
 @Composable
