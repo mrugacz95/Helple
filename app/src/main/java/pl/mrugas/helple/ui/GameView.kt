@@ -44,7 +44,7 @@ data class GameState(
     val failed: Boolean = false,
     val loading: LoadingState? = null,
     val won: Boolean = false,
-    val solver: SolverType = SolverType.ExploreExploitSolver,
+    val solver: SolverType = SolverType.MinimaxSolverType,
 ) {
     val tiles = words.flatMap { it.tiles }
 
@@ -82,11 +82,11 @@ data class GameState(
 }
 
 sealed class LoadingState {
-    object Circular: LoadingState()
+    object Circular : LoadingState()
     data class Progress(val value: Float) : LoadingState()
 }
 
-enum class SolverType { SimpleSolver, MinimaxSolver, ExploreExploitSolver }
+enum class SolverType { SimpleSolverType, MinimaxSolverType, ExploreExploitSolverType }
 
 @Preview
 @Composable
@@ -106,11 +106,13 @@ fun GameView(
         verticalArrangement = Arrangement.Center,
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
             horizontalArrangement = Arrangement.End
         ) {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(5.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 for (wordLen in 5..6) {
                     Button(
@@ -127,7 +129,7 @@ fun GameView(
                 }
             }
         }
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         for ((idx, _) in gameState.words.withIndex()) {
             Row(
                 modifier = Modifier.fillMaxWidth(),

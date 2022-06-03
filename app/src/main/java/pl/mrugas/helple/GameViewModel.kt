@@ -1,5 +1,6 @@
 package pl.mrugas.helple
 
+import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -20,6 +21,10 @@ import pl.mrugas.helple.ui.SolverType
 import pl.mrugas.helple.ui.Tile
 import pl.mrugas.helple.ui.TileState
 import pl.mrugas.helple.ui.WordState
+import kotlin.system.measureTimeMillis
+import kotlin.time.DurationUnit
+import kotlin.time.ExperimentalTime
+import kotlin.time.toDuration
 
 @HiltViewModel
 class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewModel() {
@@ -72,13 +77,17 @@ class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewMode
         }
     }
 
+    @OptIn(ExperimentalTime::class)
     private suspend fun calculateNewWord(gameState: GameState, updateProgress: (progress: Float) -> Unit): DbWord? {
         val solver = when (gameState.solver) {
-            SolverType.SimpleSolver -> SimpleSolver()
-            SolverType.MinimaxSolver -> MinimaxSolver()
-            SolverType.ExploreExploitSolver -> ExploreExploitSolver()
+            SolverType.SimpleSolverType -> SimpleSolver()
+            SolverType.MinimaxSolverType -> MinimaxSolver()
+            SolverType.ExploreExploitSolverType -> ExploreExploitSolver()
         }
-        return solver.guessNewWord(gameState, wordDao, updateProgress)
+        val newWord: DbWord?
+        val elapsedTime = measureTimeMillis { newWord = solver.guessNewWord(gameState, wordDao, updateProgress) }
+        Log.d("Solver", "Calculating new Word took ${elapsedTime.toDuration(DurationUnit.MILLISECONDS).toIsoString()}")
+        return newWord
     }
 
     fun updateState(word: WordState, tile: Tile) {

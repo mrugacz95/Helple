@@ -13,26 +13,26 @@ data class QueryBuilder(
 ) {
 
     fun addKnownLetter(letter: Char, position: Int): QueryBuilder = apply {
-        appendWhere("letter${position} is \"${letter}\"")
+        appendWhere("letter${position} is '${letter}'")
         return this
     }
 
     fun addWrongLetter(letter: Char, position: Int) = apply {
-        appendWhere("letter${position} is not \"${letter}\"")
+        appendWhere("letter${position} is not '${letter}'")
     }
 
-    fun excludeLetter(letter: Char, wordLen: Int) = apply {
+    private fun excludeLetter(letter: Char, wordLen: Int) = apply {
         for (position in 0 until wordLen) {
-            appendWhere("letter${position} is not \"${letter}\"")
+            appendWhere("letter${position} is not '${letter}'")
         }
     }
 
     fun addIncorrectPlaceLetter(letter: Char, position: Int, wordLen: Int) = apply {
-        appendWhere("letter${position} is not \"${letter}\"")
+        appendWhere("letter${position} is not '${letter}'")
         appendOrGroup(*((0 until wordLen)
             .filter { it != position }
             .map { pos ->
-                "letter$pos is \"${letter}\""
+                "letter$pos is '${letter}'"
             })
             .toTypedArray()
         )
