@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 import pl.mrugas.helple.data.DbWord
 import pl.mrugas.helple.data.QueryBuilder
 import pl.mrugas.helple.data.WordDao
+import pl.mrugas.helple.domain.ExploreExploitSolver
 import pl.mrugas.helple.domain.MinimaxSolver
 import pl.mrugas.helple.domain.SimpleSolver
 import pl.mrugas.helple.ui.GameState
@@ -75,6 +76,7 @@ class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewMode
         val solver = when (gameState.solver) {
             SolverType.SimpleSolver -> SimpleSolver()
             SolverType.MinimaxSolver -> MinimaxSolver()
+            SolverType.ExploreExploitSolver -> ExploreExploitSolver()
         }
         return solver.guessNewWord(gameState, wordDao, updateProgress)
     }
@@ -110,7 +112,7 @@ class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewMode
 
     companion object {
         val INITIAL_WORDS = mapOf(
-            5 to "korea", // korei, siorka, eolia
+            5 to "korei", // korei, siora, eolia
             6 to "siorka"
         )
         val WORD_LEN = 5

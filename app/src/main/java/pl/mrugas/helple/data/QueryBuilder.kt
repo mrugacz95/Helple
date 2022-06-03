@@ -102,11 +102,22 @@ data class QueryBuilder(
             TileState.WRONG -> {
                 if (wordState.tiles.any { tile ->
                         tile.id != position &&
-                            tile.state != TileState.WRONG &&
+                            tile.state == TileState.INCORRECT_PLACE &&
                             tile.letter == letter
                     }
                 ) {
                     query.addWrongLetter(letter, position)
+                } else if (wordState.tiles.any { tile ->
+                        tile.id != position &&
+                            tile.state == TileState.CORRECT_PLACE &&
+                            tile.letter == letter
+                    }
+                ) {
+                    for (tile in wordState.tiles) {
+                        if (tile.state != TileState.CORRECT_PLACE) {
+                            query.addWrongLetter(letter, tile.id)
+                        }
+                    }
                 } else {
                     query.excludeLetter(letter, wordLen)
                 }
@@ -115,11 +126,32 @@ data class QueryBuilder(
     }
 
     companion object {
-        fun fromGameState(gameState: GameState): QueryBuilder {
+        fun fromGameState(
+            gameState: GameState,
+            correctLettersOption: LetterOption = LetterOption.INCLUDE,
+            incorrectPlaceLetterOption: LetterOption = LetterOption.INCLUDE,
+            wrongLetterOption: LetterOption = LetterOption.INCLUDE
+        ): QueryBuilder {
             val query = QueryBuilder()
             for (word in gameState.words) {
                 for (tile in word.tiles) {
-                    query.appendTileRuleToQuery(tile.state, word, tile.letter, tile.id, gameState.wordLen, query)
+                    val option = when (tile.state) {
+                        TileState.CORRECT_PLACE -> correctLettersOption
+                        TileState.INCORRECT_PLACE -> incorrectPlaceLetterOption
+                        TileState.WRONG -> wrongLetterOption
+                    }
+                    when (option) {
+                        LetterOption.INCLUDE -> query.appendTileRuleToQuery(
+                            state = tile.state,
+                            wordState = word,
+                            letter = tile.letter,
+                            position = tile.id,
+                            wordLen = gameState.wordLen,
+                            query = query
+                        )
+                        LetterOption.EXCLUDE -> query.addWrongLetter(tile.letter, tile.id)
+                        LetterOption.OMIT -> continue
+                    }
                 }
             }
             query.setWordsLen(gameState.wordLen)
@@ -127,3 +159,5 @@ data class QueryBuilder(
         }
     }
 }
+
+enum class LetterOption { INCLUDE, EXCLUDE, OMIT }

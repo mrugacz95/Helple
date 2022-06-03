@@ -91,7 +91,7 @@ fun TileView(
             disabledElevation = 0.dp
         ),
         onClick = { onTileChanged(tile) },
-        enabled = !gameState.won && gameState.loading == null && !gameState.failed
+        enabled = !gameState.won && gameState.loading == null && !gameState.failed && gameState.attempt == wordId
     ) {
         Text(
             text = tile.letter.uppercase(),
