@@ -44,7 +44,7 @@ data class GameState(
     val failed: Boolean = false,
     val loading: LoadingState? = null,
     val won: Boolean = false,
-    val solver: SolverType = SolverType.MinimaxSolverType,
+    val solver: SolverType = SolverType.ExploreExploitSolverType,
 ) {
     val tiles = words.flatMap { it.tiles }
 
@@ -67,8 +67,8 @@ data class GameState(
             words = listOf(
                 WordState(
                     attempt = 0,
-                    tiles = List(initialWord.length) { tileId ->
-                        Tile(tileId, TileState.CORRECT_PLACE, initialWord[tileId])
+                    tiles = initialWord.mapIndexed { tileId, letter ->
+                        Tile(tileId, TileState.CORRECT_PLACE, letter)
                     }
                 )
             ),

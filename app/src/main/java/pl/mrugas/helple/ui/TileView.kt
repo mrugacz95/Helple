@@ -1,9 +1,10 @@
 package pl.mrugas.helple.ui
 
 import android.animation.TimeInterpolator
-import android.view.animation.BounceInterpolator
 import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
@@ -56,18 +57,20 @@ fun TileView(
     val textColor = if (tile.state == TileState.WRONG) Color.White else Color.Black
     val size = 42.dp
     val infiniteTransition = rememberInfiniteTransition()
-    val animationStartDelay = 50 * tile.id
+    val animationStartDelay = 75 * tile.id
+    val animationDuration = 1000 + animationStartDelay
     val offset by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 0f,
         animationSpec = infiniteRepeatable(
             animation = keyframes {
-                durationMillis = 1000 + animationStartDelay
+                durationMillis = animationDuration
                 0f at 0
                 0f at animationStartDelay
-                -6f at 200 with FastOutSlowInEasing
-                0f at 1000 with BounceInterpolator().toEasing()
-            }
+                -6f at 200 + animationStartDelay with LinearEasing
+                0f at animationDuration with FastOutSlowInEasing
+            },
+            repeatMode = RepeatMode.Restart
         )
     )
     val yOffset = if (gameState.won && gameState.attempt == wordId) {
