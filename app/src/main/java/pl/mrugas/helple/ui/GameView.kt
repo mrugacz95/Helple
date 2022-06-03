@@ -19,10 +19,12 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import pl.mrugas.helple.GameViewModel
 import pl.mrugas.helple.GameViewModel.Companion.WORD_LEN
@@ -33,7 +35,8 @@ fun MainActivityView(gameViewModel: GameViewModel = viewModel()) {
         onGameStateChanged = { word, tile -> gameViewModel.updateState(word, tile) },
         guessNewWordAction = { gameViewModel.guessNewWord() },
         restartAction = { gameViewModel.restart() },
-        changeWordLengthAction = { gameViewModel.changeWordLength(it) })
+        changeWordLengthAction = { gameViewModel.changeWordLength(it) },
+        changeSolver = { gameViewModel.changeSolver() })
 }
 
 data class GameState(
@@ -86,7 +89,11 @@ sealed class LoadingState {
     data class Progress(val value: Float) : LoadingState()
 }
 
-enum class SolverType { SimpleSolverType, MinimaxSolverType, ExploreExploitSolverType }
+enum class SolverType(val displayName: String) {
+    SimpleSolverType("SIMPLE"), MinimaxSolverType("MINIMAX"), ExploreExploitSolverType(
+        "EXPLORE"
+    )
+}
 
 @Preview
 @Composable
@@ -96,6 +103,7 @@ fun GameView(
     guessNewWordAction: () -> Unit = {},
     restartAction: () -> Unit = {},
     changeWordLengthAction: (Int) -> Unit = {},
+    changeSolver: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -111,6 +119,23 @@ fun GameView(
                 .padding(8.dp),
             horizontalArrangement = Arrangement.End
         ) {
+            Row {
+                Button(
+                    contentPadding = PaddingValues(0.dp),
+                    modifier = Modifier
+                        .padding(2.dp)
+                        .height(38.dp),
+                    onClick = changeSolver,
+                ) {
+                    Text(
+                        text = gameState.solver.displayName,
+                        fontSize = 12.sp,
+                        modifier = Modifier.height(16.dp),
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.weight(1f))
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -118,7 +143,7 @@ fun GameView(
                     Button(
                         contentPadding = PaddingValues(0.dp),
                         modifier = Modifier
-                            .padding(0.dp)
+                            .padding(2.dp)
                             .size(38.dp),
                         onClick = { changeWordLengthAction(wordLen) },
                         enabled = gameState.loading == null,

@@ -21,6 +21,7 @@ import pl.mrugas.helple.ui.SolverType
 import pl.mrugas.helple.ui.Tile
 import pl.mrugas.helple.ui.TileState
 import pl.mrugas.helple.ui.WordState
+import pl.mrugas.helple.util.next
 import kotlin.system.measureTimeMillis
 import kotlin.time.DurationUnit
 import kotlin.time.ExperimentalTime
@@ -117,6 +118,10 @@ class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewMode
     fun changeWordLength(newLength: Int) {
         gameState.value = gameState.value.copy(wordLen = newLength)
         restart()
+    }
+
+    fun changeSolver() {
+        gameState.value = gameState.value.copy(solver = gameState.value.solver.next())
     }
 
     companion object {

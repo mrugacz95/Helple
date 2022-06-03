@@ -29,13 +29,6 @@ import pl.mrugas.helple.R
 
 enum class TileState {
     CORRECT_PLACE, INCORRECT_PLACE, WRONG;
-
-    fun next(): TileState {
-        return values().toMutableList().apply { add(values().first()) }.let {
-            val idx = it.indexOf(this)
-            it[idx + 1]
-        }
-    }
 }
 
 data class Tile(val id: Int, val state: TileState, val letter: Char)
