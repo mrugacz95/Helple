@@ -2,6 +2,7 @@ package pl.mrugas.helple.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,6 +20,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
@@ -27,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import pl.mrugas.helple.GameViewModel
+import pl.mrugas.helple.GameViewModel.Companion.POSSIBLE_ATTEMPTS
 import pl.mrugas.helple.GameViewModel.Companion.WORD_LEN
 
 @Composable
@@ -66,7 +69,12 @@ data class GameState(
             )
         }
 
-        fun initial(initialWord: String, possibleWords: Int, loading: LoadingState? = null) = GameState(
+        fun initial(
+            initialWord: String,
+            possibleWords: Int,
+            loading: LoadingState? = null,
+            solver: SolverType = SolverType.MinimaxSolverType
+        ) = GameState(
             words = listOf(
                 WordState(
                     attempt = 0,
@@ -78,6 +86,7 @@ data class GameState(
             wordLen = initialWord.length,
             possibleWords = possibleWords,
             loading = loading,
+            solver = solver,
         )
 
         fun empty() = GameState(emptyList(), loading = LoadingState.Circular)
@@ -121,7 +130,7 @@ fun GameView(
         ) {
             Row {
                 Button(
-                    contentPadding = PaddingValues(0.dp),
+                    contentPadding = PaddingValues(vertical = 0.dp),
                     modifier = Modifier
                         .padding(2.dp)
                         .height(38.dp),
@@ -166,6 +175,18 @@ fun GameView(
                     onWordChanged = onGameStateChanged,
                 )
             }
+            if (idx == POSSIBLE_ATTEMPTS - 1 && gameState.attempt >= POSSIBLE_ATTEMPTS) {
+                Row(
+                    modifier = Modifier.height(IntrinsicSize.Min),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "Oh no, we run out of attempts. Anyway, you can continue guessing.",
+                        fontSize = 8.sp,
+                        color = Color.Red
+                    )
+                }
+            }
         }
         if (gameState.loading != null) {
             Spacer(modifier = Modifier.height(16.dp))
@@ -191,7 +212,21 @@ fun GameView(
 
 class GameProvider : PreviewParameterProvider<GameState> {
     override val values = listOf(
-        GameState.initial("siorka", possibleWords = 35263, loading = LoadingState.Progress(0.33f)),
+        GameState(
+            words = listOf(
+                WordState.fromWordAndStates("siorka", List(6) { TileState.CORRECT_PLACE }),
+                WordState.fromWordAndStates("korbka", List(6) { TileState.CORRECT_PLACE }),
+                WordState.fromWordAndStates("krówka", List(6) { TileState.CORRECT_PLACE }),
+                WordState.fromWordAndStates("czajka", List(6) { TileState.CORRECT_PLACE }),
+                WordState.fromWordAndStates("wiśnia", List(6) { TileState.CORRECT_PLACE }),
+                WordState.fromWordAndStates("wtorek", List(6) { TileState.CORRECT_PLACE }),
+                WordState.fromWordAndStates("jabłko", List(6) { TileState.CORRECT_PLACE }),
+                WordState.fromWordAndStates("pleśni", List(6) { TileState.CORRECT_PLACE }),
+            ),
+            wordLen = 6,
+            possibleWords = 35263,
+            loading = LoadingState.Progress(0.33f)
+        ),
         GameState.initial("korei", possibleWords = 32263, loading = null),
     ).asSequence()
 }

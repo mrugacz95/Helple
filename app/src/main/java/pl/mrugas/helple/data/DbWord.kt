@@ -25,15 +25,12 @@ data class DbWord(
     @ColumnInfo(name = "letter5") val letter5: String,
     @ColumnInfo(name = "length") val length: Int,
 ) {
-    fun toWordState(attempt: Int): WordState {
-        val word = toString()
-        return WordState(
-            attempt = attempt,
-            tiles = List(word.length) {
-                Tile(it, TileState.CORRECT_PLACE, word[it])
-            }
-        )
-    }
+    fun toWordState(attempt: Int): WordState = WordState(
+        attempt = attempt,
+        tiles = toString().mapIndexed { id, letter ->
+            Tile(id, TileState.CORRECT_PLACE, letter)
+        }
+    )
 
     override fun toString(): String {
         return "$letter0$letter1$letter2$letter3$letter4$letter5"

@@ -36,7 +36,12 @@ class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewMode
     fun init() {
         viewModelScope.launch(Dispatchers.IO) {
             val count = wordDao.count(gameState.value.wordLen)
-            gameState.value = GameState.initial(INITIAL_WORDS[gameState.value.wordLen] ?: "korei", possibleWords = count)
+            val current = gameState.value
+            gameState.value = GameState.initial(
+                initialWord = INITIAL_WORDS[gameState.value.wordLen] ?: "korei",
+                possibleWords = count,
+                solver = current.solver
+            )
         }
     }
 
@@ -67,13 +72,12 @@ class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewMode
             }
 
             val attemptCount = currentState.attempt + 1
-            gameState.value = GameState(
+            gameState.value = currentState.copy(
                 words = currentState.words.toMutableList() + listOf(newWord.toWordState(attemptCount)),
                 attempt = attemptCount,
-                wordLen = currentState.wordLen,
                 possibleWords = wordsLeft,
                 failed = false,
-                loading = null
+                loading = null,
             )
         }
     }
@@ -92,23 +96,43 @@ class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewMode
     }
 
     fun updateState(word: WordState, tile: Tile) {
-        val currentState = gameState.value
-        val currentWords = currentState.words
-        val newWords = currentWords.toMutableList().apply {
-            this[word.attempt] = updateWord(this[word.attempt], tile.copy(state = tile.state.next()))
-        }
-        gameState.value = currentState.copy(words = newWords)
+        gameState.value = updateWord(gameState.value, word, tile)
     }
 
-    fun updateWord(word: WordState, newTile: Tile): WordState {
-        return word.copy(tiles = word
-            .tiles
-            .toMutableList()
-            .apply {
-                this[newTile.id] = newTile
+    fun updateWord(gameState: GameState, word: WordState, tile: Tile): GameState {
+        val nextState = when {
+            tileAlreadyMarkedCorrect(gameState, tile) -> TileState.CORRECT_PLACE
+            otherPlacesMarkedWrongPlace(gameState, tile) -> TileState.CORRECT_PLACE
+            else -> tile.state.next()
+        }
+        val nextWords = gameState.words.toMutableList().apply {
+            this[word.attempt] = this[word.attempt].let {
+                it.copy(
+                    tiles = it.tiles.toMutableList().apply {
+                        this[tile.id] = this[tile.id].copy(state = nextState)
+                    }
+                )
             }
-        )
+        }
+        return gameState.copy(words = nextWords)
     }
+
+    private fun tileAlreadyMarkedCorrect(gameState: GameState, tile: Tile) = gameState
+        .words
+        .dropLast(1)
+        .map { it.tiles[tile.id] }
+        .filter { it.letter == tile.letter }
+        .any { it.state == TileState.CORRECT_PLACE }
+
+    private fun otherPlacesMarkedWrongPlace(gameState: GameState, tile: Tile) = gameState
+        .words
+        .dropLast(1)
+        .flatMap { it.tiles }
+        .filter { it.letter == tile.letter && it.state == TileState.INCORRECT_PLACE }
+        .map { it.id }
+        .toSet().let {
+            it.size == 4 && !it.contains(tile.id)
+        }
 
     fun restart() {
         viewModelScope.coroutineContext.cancelChildren()
@@ -126,9 +150,10 @@ class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewMode
 
     companion object {
         val INITIAL_WORDS = mapOf(
-            5 to "korei", // korei, siora, eolia
+            5 to "korea", // korei, siora, eolia
             6 to "siorka"
         )
         val WORD_LEN = 5
+        const val POSSIBLE_ATTEMPTS = 6
     }
 }

@@ -10,5 +10,9 @@ class SimpleSolver : Solver {
         gameState: GameState,
         wordDao: WordDao,
         updateProgress: (progress: Float) -> Unit
-    ): DbWord? = wordDao.rawQuery(QueryBuilder.fromGameState(gameState).build()).randomOrNull()
+    ): DbWord? {
+        val words = wordDao.rawQuery(QueryBuilder.fromGameState(gameState).build())
+        return words.firstOrNull()
+    }
+
 }
