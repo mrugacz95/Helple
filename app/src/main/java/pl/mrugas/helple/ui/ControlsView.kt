@@ -31,14 +31,15 @@ fun ControlsView(
             Modifier.fillMaxHeight(),
             verticalArrangement = Arrangement.Center
         ) {
+            val possibleWords = if (gameState.loading == null) gameState.possibleWords.toString() else "?"
             Text(
-                text = "Possible words: ${gameState.possibleWords}"
+                text = "Possible words: ${possibleWords}"
             )
         }
         Spacer(modifier = Modifier.width(16.dp))
         Button(
             onClick = { guessNewWordAction() },
-            enabled = gameState.loading == null && !gameState.won
+            enabled = gameState.loading == null && !gameState.won && !gameState.failed
         ) {
             Text(text = "OK")
         }
@@ -46,7 +47,7 @@ fun ControlsView(
         Button(
             onClick = { restartAction() },
         ) {
-            val text = if (gameState.failed) "No words found, restart" else "Restart"
+            val text = "Restart"
             Text(text = text)
         }
     }

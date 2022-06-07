@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
@@ -31,6 +32,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import pl.mrugas.helple.GameViewModel
 import pl.mrugas.helple.GameViewModel.Companion.POSSIBLE_ATTEMPTS
 import pl.mrugas.helple.GameViewModel.Companion.WORD_LEN
+import pl.mrugas.helple.R
 
 @Composable
 fun MainActivityView(gameViewModel: GameViewModel = viewModel()) {
@@ -50,7 +52,7 @@ data class GameState(
     val failed: Boolean = false,
     val loading: LoadingState? = null,
     val won: Boolean = false,
-    val solver: SolverType = SolverType.ExploreExploitSolverType,
+    val solver: SolverType = SolverType.EntropySolverType,
 ) {
     val tiles = words.flatMap { it.tiles }
 
@@ -131,7 +133,7 @@ fun GameView(
         ) {
             Row {
                 Button(
-                    contentPadding = PaddingValues(vertical = 0.dp),
+//                    contentPadding = PaddingValues(vertical = 0.dp),
                     modifier = Modifier
                         .padding(2.dp)
                         .height(38.dp),
@@ -176,15 +178,47 @@ fun GameView(
                     onWordChanged = onGameStateChanged,
                 )
             }
-            if (idx == POSSIBLE_ATTEMPTS - 1 && gameState.attempt >= POSSIBLE_ATTEMPTS) {
+            if (idx == gameState.attempt && gameState.failed) {
                 Row(
                     modifier = Modifier.height(IntrinsicSize.Min),
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "Oh no, we run out of attempts. Anyway, you can continue guessing.",
+                        text = "Oh no, I have no idea what word it is. Check if hints were marked correctly.",
                         fontSize = 8.sp,
                         color = Color.Red
+                    )
+                }
+            } else if (idx == POSSIBLE_ATTEMPTS - 1 && gameState.attempt >= POSSIBLE_ATTEMPTS) {
+                Row(
+                    modifier = Modifier.height(IntrinsicSize.Min),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "Oh no, we run out of attempts. Anyway, we can continue guessing.",
+                        fontSize = 8.sp,
+                        color = Color.Red
+                    )
+                }
+            } else if (idx == gameState.attempt && gameState.won) {
+                Row(
+                    modifier = Modifier.height(IntrinsicSize.Min),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    val message = when (gameState.attempt) {
+                        0 -> "That was too easy!"
+                        1 -> "Child's play, pfff"
+                        2 -> "Easy-peasy, dude!"
+                        3 -> "What an incredible gameplay!"
+                        4 -> "Exactly, well done"
+                        5 -> "Fair enough, fellow human."
+                        6 -> "Phew, it was close!"
+                        else -> "Oh, finally..."
+                    }
+                    Text(
+                        text = message,
+                        fontSize = 8.sp,
+                        color = colorResource(id = R.color.tile_correct)
                     )
                 }
             }
@@ -229,6 +263,7 @@ class GameProvider : PreviewParameterProvider<GameState> {
             loading = LoadingState.Progress(0.33f)
         ),
         GameState.initial("korei", possibleWords = 32263, loading = null),
+        GameState.initial("siorka", possibleWords = 32263, loading = null).copy(won = true),
     ).asSequence()
 }
 
