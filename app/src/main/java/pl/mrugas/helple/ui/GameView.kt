@@ -133,7 +133,6 @@ fun GameView(
         ) {
             Row {
                 Button(
-//                    contentPadding = PaddingValues(vertical = 0.dp),
                     modifier = Modifier
                         .padding(2.dp)
                         .height(38.dp),
@@ -179,48 +178,29 @@ fun GameView(
                 )
             }
             if (idx == gameState.attempt && gameState.failed) {
-                Row(
-                    modifier = Modifier.height(IntrinsicSize.Min),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "Oh no, I have no idea what word it is. Check if hints were marked correctly.",
-                        fontSize = 8.sp,
-                        color = Color.Red
-                    )
-                }
+                MessageView(
+                    message = "Oh no, I have no idea what word it is. Check if hints were marked correctly.",
+                    color = Color.Red
+                )
             } else if (idx == POSSIBLE_ATTEMPTS - 1 && gameState.attempt >= POSSIBLE_ATTEMPTS) {
-                Row(
-                    modifier = Modifier.height(IntrinsicSize.Min),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "Oh no, we run out of attempts. Anyway, we can continue guessing.",
-                        fontSize = 8.sp,
-                        color = Color.Red
-                    )
-                }
+                MessageView(
+                    message = "Oh no, we run out of attempts. Anyway, we can continue guessing.",
+                    color = Color.Red
+                )
             } else if (idx == gameState.attempt && gameState.won) {
-                Row(
-                    modifier = Modifier.height(IntrinsicSize.Min),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    val message = when (gameState.attempt) {
-                        0 -> "That was too easy!"
-                        1 -> "Child's play, pfff"
-                        2 -> "Easy-peasy, dude!"
-                        3 -> "What an incredible gameplay!"
-                        4 -> "Exactly, well done"
-                        5 -> "Fair enough, fellow human."
-                        6 -> "Phew, it was close!"
-                        else -> "Oh, finally..."
-                    }
-                    Text(
-                        text = message,
-                        fontSize = 8.sp,
-                        color = colorResource(id = R.color.tile_correct)
-                    )
+                val message = when (gameState.attempt) {
+                    0 -> "That was too easy!"
+                    1 -> "Child's play, pff!"
+                    2 -> "Easy-peasy, dude!"
+                    3 -> "Exactly, well done"
+                    4 -> "Fair enough, fellow human."
+                    5 -> "Phew, it was close!"
+                    else -> "Oh, finally..."
                 }
+                MessageView(
+                    message = message,
+                    color = colorResource(id = R.color.tile_correct)
+                )
             }
         }
         if (gameState.loading != null) {
@@ -244,6 +224,19 @@ fun GameView(
         )
     }
 }
+
+@Composable
+fun MessageView(message: String, color: Color) = Row(
+    modifier = Modifier.height(IntrinsicSize.Min),
+    horizontalArrangement = Arrangement.Center
+) {
+    Text(
+        text = message,
+        fontSize = 8.sp,
+        color = color
+    )
+}
+
 
 class GameProvider : PreviewParameterProvider<GameState> {
     override val values = listOf(
