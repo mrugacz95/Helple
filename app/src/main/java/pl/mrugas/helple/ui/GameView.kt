@@ -99,9 +99,10 @@ sealed class LoadingState {
 }
 
 enum class SolverType(val displayName: String) {
-    SimpleSolverType("SIMPLE"), MinimaxSolverType("MINIMAX"), ExploreExploitSolverType(
-        "EXPLORE"
-    )
+    SimpleSolverType("SIMPLE"),
+    MinimaxSolverType("MINIMAX"),
+    ExploreExploitSolverType("EXPLORE"),
+    EntropySolverType("ENTROPY")
 }
 
 @Preview

@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import pl.mrugas.helple.data.DbWord
 import pl.mrugas.helple.data.QueryBuilder
 import pl.mrugas.helple.data.WordDao
+import pl.mrugas.helple.domain.EntropySolver
 import pl.mrugas.helple.domain.ExploreExploitSolver
 import pl.mrugas.helple.domain.MinimaxSolver
 import pl.mrugas.helple.domain.SimpleSolver
@@ -88,6 +89,7 @@ class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewMode
             SolverType.SimpleSolverType -> SimpleSolver()
             SolverType.MinimaxSolverType -> MinimaxSolver()
             SolverType.ExploreExploitSolverType -> ExploreExploitSolver()
+            SolverType.EntropySolverType -> EntropySolver()
         }
         val newWord: DbWord?
         val elapsedTime = measureTimeMillis { newWord = solver.guessNewWord(gameState, wordDao, updateProgress) }

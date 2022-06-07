@@ -74,8 +74,10 @@ data class QueryBuilder(
         }
         query.append(" FROM ")
         query.append(tables)
-        query.append(" WHERE ")
-        query.append(whereClause)
+        if (whereClause.isNotEmpty()) {
+            query.append(" WHERE ")
+            query.append(whereClause)
+        }
         return query.toString()
     }
 
