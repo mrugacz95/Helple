@@ -15,7 +15,7 @@ You can switch between 5 and 6 letters long. Try to find secret ord which will m
 
 ##### Screenshots
 
-![Screenshot](https://user-images.githubusercontent.com/12548284/174679050-4b36b3a6-8f5b-4662-84d9-0b5156a3b0c1.gif)
+<img src=https://user-images.githubusercontent.com/12548284/174679050-4b36b3a6-8f5b-4662-84d9-0b5156a3b0c1.gif width="250px">
 
 ##### Compiled apk
 
