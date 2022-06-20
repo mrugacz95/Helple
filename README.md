@@ -13,15 +13,15 @@ There are three algorithms which can be used to find solution.
 
 You can switch between 5 and 6 letters long. Try to find secret ord which will make app use more than 6 guesses.
 
-##### Screenshots
+### Screenshots
 
-<img src=https://user-images.githubusercontent.com/12548284/174679050-4b36b3a6-8f5b-4662-84d9-0b5156a3b0c1.gif width="250px">
+<img src="https://user-images.githubusercontent.com/12548284/174679050-4b36b3a6-8f5b-4662-84d9-0b5156a3b0c1.gif" width="340"/>
 
-##### Compiled apk
+### Compiled apk
 
 You can find build apk in release tab. Soon I will also publish it on Google Play.
 
-##### Contribution
+### Contribution
 
 If you want to add some improvement, here are few ideas:
 
@@ -33,7 +33,7 @@ If you want to add some improvement, here are few ideas:
 * Display more suggestions aat once
 
 
-#### Other languages
+### Other languages
 
 It's possible to adjust application to other language, just replace database under path: Helple/app/src/main/assets/database/words.db
 
