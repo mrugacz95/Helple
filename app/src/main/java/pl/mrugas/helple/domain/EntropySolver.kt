@@ -1,6 +1,11 @@
 package pl.mrugas.helple.domain
 
 import java.util.*
+import kotlinx.coroutines.ObsoleteCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.channels.actor
+import kotlinx.coroutines.coroutineScope
 import pl.mrugas.helple.data.DbWord
 import pl.mrugas.helple.data.QueryBuilder
 import pl.mrugas.helple.data.WordDao
@@ -11,29 +16,41 @@ import pl.mrugas.helple.util.nAryCartesianProduct
 import kotlin.math.log2
 
 class EntropySolver : Solver {
+    @OptIn(ObsoleteCoroutinesApi::class)
     override suspend fun guessNewWord(
         gameState: GameState,
         wordDao: WordDao,
         updateProgress: (progress: Float) -> Unit
-    ): DbWord? {
+    ): DbWord? = coroutineScope {
         val query = QueryBuilder.fromGameState(gameState)
         val allWordsQuery = QueryBuilder().setWordsLen(gameState.wordLen)
         val possibleWords = wordDao.rawQuery(query.build())
         val possibleHints = getPossibleHints(gameState)
         val allWordsCount = wordDao.rawCountQuery(allWordsQuery.copy().count().build())
-        return possibleWords
-            .withIndex()
-            .maxByOrNull { (idx, word) ->
-                val entropy = countEntropy(
-                    gameState = gameState,
-                    wordDao = wordDao,
-                    word = word.toString(),
-                    possibleHints = possibleHints,
-                    allWordsCount = allWordsCount
-                )
-                updateProgress(idx.toFloat() / possibleWords.size)
-                entropy
-            }?.value
+        val counter = actor<Any> {
+            var counter = 0
+            for (msg in channel) {
+                counter++
+                updateProgress(counter.toFloat() / possibleWords.size)
+            }
+        }
+        val rating = possibleWords
+            .map { word ->
+                async {
+                    val entropy = countEntropy(
+                        gameState = gameState,
+                        wordDao = wordDao,
+                        word = word.toString(),
+                        possibleHints = possibleHints,
+                        allWordsCount = allWordsCount
+                    )
+                    counter.send(Unit)
+                    Pair(entropy, word)
+                }
+            }
+            .awaitAll()
+        counter.close()
+        rating.maxByOrNull { it.first }?.second
     }
 
     private suspend fun countEntropy(
@@ -61,11 +78,11 @@ class EntropySolver : Solver {
     }
 
     private fun getPossibleHints(gameState: GameState): List<List<TileState>> {
-        val random = Random(1410)
+        val random = Random(SEED)
         val hintsUsed = when (gameState.attempt) {
-            0 -> 8
-            1 -> 10
-            else -> 15
+            0 -> 16
+            1 -> 25
+            else -> 70
         }
         return nAryCartesianProduct<TileState>(List(gameState.wordLen) { TileState.values().toList() })
             .filter { states -> states.any { state -> state != TileState.CORRECT_PLACE } }
@@ -74,3 +91,5 @@ class EntropySolver : Solver {
             .toList()
     }
 }
+
+private const val SEED = 1410L

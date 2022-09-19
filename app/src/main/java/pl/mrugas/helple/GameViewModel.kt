@@ -2,6 +2,8 @@ package pl.mrugas.helple
 
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -28,8 +30,12 @@ import kotlin.time.DurationUnit
 import kotlin.time.ExperimentalTime
 import kotlin.time.toDuration
 
+
 @HiltViewModel
 class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewModel() {
+
+    private val openProjectPageEvent = MutableLiveData<Unit>()
+    fun observableOpenProjectPage(): LiveData<Unit> = openProjectPageEvent
 
     var gameState = mutableStateOf(GameState.empty())
         private set
@@ -101,7 +107,7 @@ class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewMode
         gameState.value = updateWord(gameState.value, word, tile)
     }
 
-    fun updateWord(gameState: GameState, word: WordState, tile: Tile): GameState {
+    private fun updateWord(gameState: GameState, word: WordState, tile: Tile): GameState {
         val nextState = when {
             tileAlreadyMarkedCorrect(gameState, tile) -> TileState.CORRECT_PLACE
             otherPlacesMarkedWrongPlace(gameState, tile) -> TileState.CORRECT_PLACE
@@ -133,7 +139,7 @@ class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewMode
         .filter { it.letter == tile.letter && it.state == TileState.INCORRECT_PLACE }
         .map { it.id }
         .toSet().let {
-            it.size == 4 && !it.contains(tile.id)
+            it.size == gameState.wordLen - 1 && !it.contains(tile.id)
         }
 
     fun restart() {
@@ -150,12 +156,37 @@ class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewMode
         gameState.value = gameState.value.copy(solver = gameState.value.solver.next())
     }
 
+    fun displayAbout() {
+        if (!gameState.value.aboutDisplayed)
+            gameState.value = GameState(
+                aboutDisplayed = true,
+                words = listOf(
+                    WordState(
+                        attempt = 0,
+                        tiles = "helply".mapIndexed { tileId, letter ->
+                            Tile(tileId, TileState.CORRECT_PLACE, letter)
+                        }
+                    )
+                ),
+                wordLen = 6,
+                won = true,
+                possibleWords = 1
+            )
+        else {
+            init()
+        }
+    }
+
+    fun openProjectPage() {
+        openProjectPageEvent.value = Unit
+    }
+
+
     companion object {
         val INITIAL_WORDS = mapOf(
             5 to "korea", // korei, siora, eolia
             6 to "siorka"
         )
-        val WORD_LEN = 5
         const val POSSIBLE_ATTEMPTS = 6
     }
 }
