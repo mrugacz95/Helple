@@ -46,7 +46,7 @@ fun MainActivityView(gameViewModel: GameViewModel = viewModel()) {
         restartAction = { gameViewModel.restart() },
         changeWordLengthAction = { gameViewModel.changeWordLength(it) },
         changeSolver = { gameViewModel.changeSolver() },
-        disaplyAbout = { gameViewModel.displayAbout() },
+        displayAbout = { gameViewModel.displayAbout() },
         openProjectPage = { gameViewModel.openProjectPage() })
 }
 
@@ -109,7 +109,7 @@ fun GameView(
     restartAction: () -> Unit = {},
     changeWordLengthAction: (Int) -> Unit = {},
     changeSolver: () -> Unit = {},
-    disaplyAbout: () -> Unit = {},
+    displayAbout: () -> Unit = {},
     openProjectPage: () -> Unit = {},
 ) {
     Column(
@@ -150,7 +150,7 @@ fun GameView(
                     modifier = Modifier
                         .padding(2.dp)
                         .size(38.dp),
-                    onClick = { disaplyAbout() },
+                    onClick = { displayAbout() },
                     enabled = gameState.loading == null,
                     shape = CircleShape,
                     colors = if (gameState.aboutDisplayed)

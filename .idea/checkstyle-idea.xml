@@ -8,8 +8,8 @@
     <option name="activeLocationIds" />
     <option name="locations">
       <list>
-        <ConfigurationLocation id="2e476086-28d2-4877-bc9d-542f95f6ef78" type="BUNDLED" scope="All" description="Sun Checks">(bundled)</ConfigurationLocation>
-        <ConfigurationLocation id="ea35074d-ac8f-45fb-8995-786800c69607" type="BUNDLED" scope="All" description="Google Checks">(bundled)</ConfigurationLocation>
+        <ConfigurationLocation id="bundled-sun-checks" type="BUNDLED" scope="All" description="Sun Checks">(bundled)</ConfigurationLocation>
+        <ConfigurationLocation id="bundled-google-checks" type="BUNDLED" scope="All" description="Google Checks">(bundled)</ConfigurationLocation>
       </list>
     </option>
   </component>
