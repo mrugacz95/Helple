@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -14,14 +15,18 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
+import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.Icon
 import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
@@ -31,7 +36,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import pl.mrugas.helple.GameViewModel
 import pl.mrugas.helple.GameViewModel.Companion.POSSIBLE_ATTEMPTS
-import pl.mrugas.helple.GameViewModel.Companion.WORD_LEN
 import pl.mrugas.helple.R
 
 @Composable
@@ -41,7 +45,9 @@ fun MainActivityView(gameViewModel: GameViewModel = viewModel()) {
         guessNewWordAction = { gameViewModel.guessNewWord() },
         restartAction = { gameViewModel.restart() },
         changeWordLengthAction = { gameViewModel.changeWordLength(it) },
-        changeSolver = { gameViewModel.changeSolver() })
+        changeSolver = { gameViewModel.changeSolver() },
+        displayAbout = { gameViewModel.displayAbout() },
+        openProjectPage = { gameViewModel.openProjectPage() })
 }
 
 data class GameState(
@@ -52,25 +58,12 @@ data class GameState(
     val failed: Boolean = false,
     val loading: LoadingState? = null,
     val won: Boolean = false,
+    val aboutDisplayed: Boolean = false,
     val solver: SolverType = SolverType.EntropySolverType,
 ) {
     val tiles = words.flatMap { it.tiles }
 
     companion object {
-        fun randomState(): GameState {
-            val word = (0..WORD_LEN).map { ('A'..'Z').random() }.joinToString(separator = "")
-            return GameState(
-                listOf(
-                    WordState(
-                        0,
-                        List(WORD_LEN) { tileId ->
-                            Tile(tileId, TileState.values().random(), word[tileId])
-                        }
-                    )
-                )
-            )
-        }
-
         fun initial(
             initialWord: String,
             possibleWords: Int,
@@ -116,6 +109,8 @@ fun GameView(
     restartAction: () -> Unit = {},
     changeWordLengthAction: (Int) -> Unit = {},
     changeSolver: () -> Unit = {},
+    displayAbout: () -> Unit = {},
+    openProjectPage: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -150,6 +145,24 @@ fun GameView(
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                Button(
+                    contentPadding = PaddingValues(0.dp),
+                    modifier = Modifier
+                        .padding(2.dp)
+                        .size(38.dp),
+                    onClick = { displayAbout() },
+                    enabled = gameState.loading == null,
+                    shape = CircleShape,
+                    colors = if (gameState.aboutDisplayed)
+                        ButtonDefaults.textButtonColors(
+                            backgroundColor = colorResource(R.color.tile_incorrect_place),
+                            contentColor = Color.Black
+                        )
+                    else
+                        ButtonDefaults.buttonColors()
+                ) {
+                    Text(text = "?", modifier = Modifier.padding(8.dp))
+                }
                 for (wordLen in 5..6) {
                     Button(
                         contentPadding = PaddingValues(0.dp),
@@ -187,20 +200,46 @@ fun GameView(
                     message = "Oh no, we run out of attempts. Anyway, we can continue guessing.",
                     color = Color.Red
                 )
-            } else if (idx == gameState.attempt && gameState.won) {
-                val message = when (gameState.attempt) {
-                    0 -> "That was too easy!"
-                    1 -> "Child's play, pff!"
-                    2 -> "Easy-peasy, dude!"
-                    3 -> "Exactly, well done"
-                    4 -> "Fair enough, fellow human."
-                    5 -> "Phew, it was close!"
-                    else -> "Oh, finally..."
-                }
+            } else if (idx == gameState.attempt && gameState.won && !gameState.aboutDisplayed) {
+                val message = listOf(
+                    "That was too easy!",
+                    "Child's play, pff!",
+                    "Easy-peasy, dude!",
+                    "Exactly, well done",
+                    "Fair enough, fellow human.",
+                    "Phew, it was close!"
+                ).getOrElse(gameState.attempt) { "Oh, finally..." }
                 MessageView(
                     message = message,
                     color = colorResource(id = R.color.tile_correct)
                 )
+            }
+            if (gameState.aboutDisplayed) {
+                Column(
+                    modifier = Modifier.padding(top = 32.dp, bottom = 32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(bottom = 16.dp),
+                        text = "Helply is the solver for polish Wordle\nMade by Marcin Mrugas\nRead more at:",
+                        textAlign = TextAlign.Center,
+                    )
+                    Button(
+                        onClick = { openProjectPage() },
+                        colors = ButtonDefaults.outlinedButtonColors(),
+                    ) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(R.drawable.ic_mark_github),
+                            contentDescription = "Github icon",
+                            modifier = Modifier
+                                .size(32.dp)
+                                .padding(8.dp)
+                        )
+                        Text(text = "Github page")
+                    }
+                }
             }
         }
         if (gameState.loading != null) {

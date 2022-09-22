@@ -14,7 +14,7 @@ import pl.mrugas.helple.data.WordDatabase
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
-    @Singleton // Tell Dagger-Hilt to create a singleton accessible everywhere in ApplicationCompenent (i.e. everywhere in the application)
+    @Singleton
     @Provides
     fun provideWordDatabase(
         @ApplicationContext applicationContext: Context
