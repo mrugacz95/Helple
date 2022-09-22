@@ -60,7 +60,7 @@ dependencies {
     kapt "androidx.room:room-compiler:$room_version"
 
     // compose
-    def compose_version = "1.1.1"
+    def compose_version = "1.2.0"
     implementation "androidx.compose.ui:ui:$compose_version"
     implementation "androidx.compose.ui:ui-tooling:$compose_version"
     implementation "androidx.compose.foundation:foundation:$compose_version"
