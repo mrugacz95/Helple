@@ -1,6 +1,6 @@
 package pl.mrugas.helple.util
 
-class CombsWithReps<T>(val m: Int, val n: Int, val items: List<T>) {
+class CombsWithReps<T>(private val m: Int, private val n: Int, private val items: List<T>) {
     private val combination = IntArray(m)
     private var count = 0
 

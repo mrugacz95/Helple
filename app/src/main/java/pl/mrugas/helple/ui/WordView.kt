@@ -6,9 +6,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 
 data class WordState(val attempt: Int, val tiles: List<Tile>) {
-    val word: String
-        get() = tiles.map { it.letter }.joinToString(separator = "")
-
     companion object {
         fun fromWordAndStates(word: String, hints: List<TileState>, attempt: Int = -1): WordState {
             return WordState(attempt = attempt,

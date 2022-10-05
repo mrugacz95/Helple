@@ -12,12 +12,12 @@ data class QueryBuilder(
     private var count: Boolean = false
 ) {
 
-    fun addKnownLetter(letter: Char, position: Int): QueryBuilder = apply {
+    private fun addKnownLetter(letter: Char, position: Int): QueryBuilder = apply {
         appendWhere("letter${position} is '${letter}'")
         return this
     }
 
-    fun addWrongLetter(letter: Char, position: Int) = apply {
+    private fun addWrongLetter(letter: Char, position: Int) = apply {
         appendWhere("letter${position} is not '${letter}'")
     }
 
@@ -27,7 +27,7 @@ data class QueryBuilder(
         }
     }
 
-    fun addIncorrectPlaceLetter(letter: Char, position: Int, wordLen: Int) = apply {
+    private fun addIncorrectPlaceLetter(letter: Char, position: Int, wordLen: Int) = apply {
         appendWhere("letter${position} is not '${letter}'")
         appendOrGroup(*((0 until wordLen)
             .filter { it != position }

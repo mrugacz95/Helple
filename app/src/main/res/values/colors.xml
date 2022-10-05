@@ -9,7 +9,6 @@
     <color name="white">#FFFFFFFF</color>
 
     <color name="tile_correct">#8BC34A</color>
-    <color name="tile_unknown">#FFFFFF</color>
     <color name="tile_incorrect_place">#FFEB3B</color>
     <color name="tile_wrong_letter">#656565</color>
 </resources>
