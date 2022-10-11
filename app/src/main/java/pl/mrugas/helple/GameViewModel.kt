@@ -27,7 +27,6 @@ import pl.mrugas.helple.ui.WordState
 import pl.mrugas.helple.util.next
 import kotlin.system.measureTimeMillis
 import kotlin.time.DurationUnit
-import kotlin.time.ExperimentalTime
 import kotlin.time.toDuration
 
 
@@ -41,7 +40,7 @@ class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewMode
         private set
 
     fun init() {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.Default) {
             val count = wordDao.count(gameState.value.wordLen)
             val current = gameState.value
             gameState.value = GameState.initial(
@@ -78,10 +77,8 @@ class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewMode
                 return@launch
             }
 
-            val attemptCount = currentState.attempt + 1
             gameState.value = currentState.copy(
-                words = currentState.words.toMutableList() + listOf(newWord.toWordState(attemptCount)),
-                attempt = attemptCount,
+                words = currentState.words.toMutableList() + listOf(newWord.toWordState(currentState.attempt + 1)),
                 possibleWords = wordsLeft,
                 failed = false,
                 loading = null,
@@ -89,7 +86,6 @@ class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewMode
         }
     }
 
-    @OptIn(ExperimentalTime::class)
     private suspend fun calculateNewWord(gameState: GameState, updateProgress: (progress: Float) -> Unit): DbWord? {
         val solver = when (gameState.solver) {
             SolverType.SimpleSolverType -> SimpleSolver()
@@ -159,7 +155,6 @@ class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewMode
     fun displayAbout() {
         if (!gameState.value.aboutDisplayed)
             gameState.value = GameState(
-                aboutDisplayed = true,
                 words = listOf(
                     WordState(
                         attempt = 0,
@@ -169,8 +164,9 @@ class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewMode
                     )
                 ),
                 wordLen = 6,
+                possibleWords = 1,
                 won = true,
-                possibleWords = 1
+                aboutDisplayed = true
             )
         else {
             init()
@@ -179,6 +175,21 @@ class GameViewModel @Inject constructor(private val wordDao: WordDao) : ViewMode
 
     fun openProjectPage() {
         openProjectPageEvent.value = Unit
+    }
+
+    fun undoWord() {
+        if (gameState.value.words.size > 1)
+            gameState.value = gameState.value.copy(
+                words = gameState.value.words.let {
+                    if (!gameState.value.won && !gameState.value.failed) {
+                        it.dropLast(1)
+                    } else {
+                        it
+                    }
+                },
+                won = false,
+                failed = false
+            )
     }
 
 

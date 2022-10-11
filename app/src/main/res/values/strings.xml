@@ -1,3 +1,19 @@
 <resources>
     <string name="app_name">Helple</string>
+    <string name="ok">OK</string>
+    <string name="undo">Undo</string>
+    <string name="restart">Restart</string>
+    <string name="message_failure">Oh no, I have no idea what word it is. Check if hints were marked correctly.</string>
+    <string name="message_no_more_attempts">Oh no, we run out of attempts. Anyway, we can continue guessing.</string>
+    <string name="other_win_message">Oh, finally…</string>
+    <string name="about">"Helply is the solver for polish Wordle\nMade by Marcin Mrugas\nRead more at:"</string>
+    <string name="github">Github page</string>
+    <string-array name="win_messages">
+        <item>That was too easy!</item>
+        <item>Child\'s play, pff!</item>
+        <item>Easy-peasy, dude!</item>
+        <item>Exactly, well done</item>
+        <item>Fair enough, fellow human.</item>
+        <item>Phew, it was close!</item>
+    </string-array>
 </resources>

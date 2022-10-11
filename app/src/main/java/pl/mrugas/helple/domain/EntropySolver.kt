@@ -47,8 +47,7 @@ class EntropySolver : Solver {
                     counter.send(Unit)
                     Pair(entropy, word)
                 }
-            }
-            .awaitAll()
+            }.awaitAll()
         counter.close()
         rating.maxByOrNull { it.first }?.second
     }
@@ -59,22 +58,25 @@ class EntropySolver : Solver {
         word: String,
         possibleHints: List<List<TileState>>,
         allWordsCount: Int,
-    ): Float {
-        var entropy = 0f
-        val query = QueryBuilder.fromGameState(gameState).count()
-        for (hint in possibleHints) {
-            val queryCopy = query.copy()
+    ): Float = coroutineScope {
 
-            val wordState = WordState.fromWordAndStates(word, hint)
-            for (tile in wordState.tiles) {
-                queryCopy.appendTileRuleToQuery(tile.state, wordState, tile.letter, tile.id, word.length, queryCopy)
-            }
-            val p = wordDao.rawCountQuery(queryCopy.build()).toFloat() / allWordsCount
-            if (p > 0) {
-                entropy -= p * log2(p)
+        val query = QueryBuilder.fromGameState(gameState).count()
+        return@coroutineScope possibleHints.map { hint ->
+            async {
+                val queryCopy = query.copy()
+
+                val wordState = WordState.fromWordAndStates(word, hint)
+                for (tile in wordState.tiles) {
+                    queryCopy.appendTileRuleToQuery(tile.state, wordState, tile.letter, tile.id, word.length, queryCopy)
+                }
+
+                wordDao.rawCountQuery(queryCopy.build()).toFloat() / allWordsCount
             }
         }
-        return entropy
+            .awaitAll()
+            .filter { it > 0 }
+            .map { p -> -p * log2(p) }
+            .sum()
     }
 
     private fun getPossibleHints(gameState: GameState): List<List<TileState>> {

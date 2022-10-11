@@ -26,6 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.stringArrayResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -47,13 +49,13 @@ fun MainActivityView(gameViewModel: GameViewModel = viewModel()) {
         changeWordLengthAction = { gameViewModel.changeWordLength(it) },
         changeSolver = { gameViewModel.changeSolver() },
         displayAbout = { gameViewModel.displayAbout() },
-        openProjectPage = { gameViewModel.openProjectPage() })
+        openProjectPage = { gameViewModel.openProjectPage() },
+        undoWord = { gameViewModel.undoWord() })
 }
 
 data class GameState(
     val words: List<WordState>,
     val wordLen: Int = 5,
-    val attempt: Int = 0,
     val possibleWords: Int? = null,
     val failed: Boolean = false,
     val loading: LoadingState? = null,
@@ -62,7 +64,7 @@ data class GameState(
     val solver: SolverType = SolverType.EntropySolverType,
 ) {
     val tiles = words.flatMap { it.tiles }
-
+    val attempt = words.size - 1
     companion object {
         fun initial(
             initialWord: String,
@@ -111,6 +113,7 @@ fun GameView(
     changeSolver: () -> Unit = {},
     displayAbout: () -> Unit = {},
     openProjectPage: () -> Unit = {},
+    undoWord: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -192,23 +195,17 @@ fun GameView(
             }
             if (idx == gameState.attempt && gameState.failed) {
                 MessageView(
-                    message = "Oh no, I have no idea what word it is. Check if hints were marked correctly.",
+                    message = stringResource(R.string.message_failure),
                     color = Color.Red
                 )
             } else if (idx == POSSIBLE_ATTEMPTS - 1 && gameState.attempt >= POSSIBLE_ATTEMPTS) {
                 MessageView(
-                    message = "Oh no, we run out of attempts. Anyway, we can continue guessing.",
+                    message = stringResource(R.string.message_no_more_attempts),
                     color = Color.Red
                 )
             } else if (idx == gameState.attempt && gameState.won && !gameState.aboutDisplayed) {
-                val message = listOf(
-                    "That was too easy!",
-                    "Child's play, pff!",
-                    "Easy-peasy, dude!",
-                    "Exactly, well done",
-                    "Fair enough, fellow human.",
-                    "Phew, it was close!"
-                ).getOrElse(gameState.attempt) { "Oh, finally..." }
+                val message = stringArrayResource(id = R.array.win_messages)
+                    .getOrElse(gameState.attempt) { stringResource(R.string.other_win_message) }
                 MessageView(
                     message = message,
                     color = colorResource(id = R.color.tile_correct)
@@ -223,7 +220,7 @@ fun GameView(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(bottom = 16.dp),
-                        text = "Helply is the solver for polish Wordle\nMade by Marcin Mrugas\nRead more at:",
+                        text = stringResource(id = R.string.about),
                         textAlign = TextAlign.Center,
                     )
                     Button(
@@ -237,7 +234,7 @@ fun GameView(
                                 .size(32.dp)
                                 .padding(8.dp)
                         )
-                        Text(text = "Github page")
+                        Text(text = stringResource(R.string.github))
                     }
                 }
             }
@@ -259,20 +256,25 @@ fun GameView(
         ControlsView(
             gameState = gameState,
             guessNewWordAction = guessNewWordAction,
-            restartAction = restartAction
+            restartAction = restartAction,
+            undoWord = undoWord
         )
     }
 }
 
 @Composable
 fun MessageView(message: String, color: Color) = Row(
-    modifier = Modifier.height(IntrinsicSize.Min),
+    modifier = Modifier
+        .height(IntrinsicSize.Min)
+        .padding(top = 8.dp)
+        .padding(horizontal = 16.dp),
     horizontalArrangement = Arrangement.Center
 ) {
     Text(
         text = message,
-        fontSize = 8.sp,
-        color = color
+        fontSize = 16.sp,
+        color = color,
+        textAlign = TextAlign.Center
     )
 }
 

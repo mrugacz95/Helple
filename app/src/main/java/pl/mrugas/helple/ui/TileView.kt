@@ -1,7 +1,5 @@
 package pl.mrugas.helple.ui
 
-import android.animation.TimeInterpolator
-import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -94,8 +92,4 @@ fun TileView(
             color = textColor
         )
     }
-}
-
-private fun TimeInterpolator.toEasing() = Easing { x ->
-    getInterpolation(x)
 }
